@@ -1368,6 +1368,272 @@ a {
 }
 
 /* ============================================================
+   LOADING SCREEN  (/loading)
+   ============================================================ */
+.ls-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px 64px;
+  overflow: hidden;
+  text-align: center;
+}
+.ls-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.ls-bg-img {
+  object-fit: cover;
+  object-position: center;
+  animation: lsKen 24s ease-in-out infinite alternate;
+  filter: brightness(0.5) saturate(1.2);
+}
+@keyframes lsKen {
+  from { transform: scale(1.05); }
+  to { transform: scale(1.18); }
+}
+.ls-bg-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(5, 7, 13, 0.5), rgba(5, 7, 13, 0.92) 95%),
+    linear-gradient(to bottom, rgba(5, 7, 13, 0.85), rgba(5, 7, 13, 0.6) 40%, rgba(5, 7, 13, 0.95));
+}
+.ls-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(176, 38, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(176, 38, 255, 0.06) 1px, transparent 1px);
+  background-size: 54px 54px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000, transparent 80%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000, transparent 80%);
+}
+.ls-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.ls-logo {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  display: grid;
+  place-items: center;
+}
+.ls-logo-img {
+  width: 116px;
+  height: 116px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #05070d;
+  box-shadow: 0 0 50px rgba(176, 38, 255, 0.6);
+  animation: blastGlow 1.8s ease-in-out infinite;
+}
+.ls-logo-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 229, 255, 0.5);
+  border-top-color: rgba(176, 38, 255, 0.9);
+  animation: blastSpinRev 3.2s linear infinite;
+}
+.ls-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 6vw, 3rem);
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin-top: 4px;
+}
+.ls-title span {
+  background: linear-gradient(120deg, var(--violet), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ls-sub {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.34em;
+  font-size: 0.82rem;
+  color: var(--cyan);
+  margin-top: -8px;
+}
+.ls-progress {
+  width: 100%;
+  margin-top: 6px;
+}
+.ls-progress-track {
+  height: 8px;
+  border-radius: 100px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+.ls-progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--violet), var(--cyan));
+  box-shadow: 0 0 16px var(--violet);
+  transition: width 0.2s linear;
+}
+.ls-progress-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.ls-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+.ls-stat {
+  flex: 1 1 0;
+  min-width: 110px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+}
+.ls-stat-label {
+  display: block;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-size: 0.66rem;
+  color: var(--muted-dim);
+  margin-bottom: 4px;
+}
+.ls-stat-val {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.ls-stat-val small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+.ls-stat-val.ok { color: #2bff88; }
+.ls-stat-val.off { color: #ff5470; }
+.ls-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 10px currentColor;
+  animation: blink 1.6s ease-in-out infinite;
+}
+.ls-wipe {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+}
+.ls-wipe-label {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.7rem;
+  color: var(--cyan);
+}
+.ls-wipe-clock {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+.ls-wipe-unit b {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.6rem;
+  display: block;
+  line-height: 1;
+}
+.ls-wipe-unit span {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.62rem;
+  color: var(--muted-dim);
+}
+.ls-tip {
+  min-height: 22px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  animation: lsTipIn 0.5s ease both;
+}
+@keyframes lsTipIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+.ls-tip-badge {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  font-size: 0.64rem;
+  color: var(--violet);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 3px 7px;
+}
+.ls-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+.ls-footer {
+  position: absolute;
+  bottom: 22px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.7rem;
+  color: var(--muted-dim);
+  z-index: 1;
+}
+.ls-footer b { color: var(--muted); }
+
+@media (max-width: 560px) {
+  .ls-stat { min-width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
+  .ls-wipe-unit b { font-size: 1.35rem; }
+}
+
+/* ============================================================
    REVEAL ANIMATION
    ============================================================ */
 .reveal {

@@ -4,9 +4,7 @@ const nextConfig = {
   images: {
     qualities: [75, 95],
   },
-  experimental: {
-    serverComponentsExternalPackages: ['gamedig'],
-  },
+  serverExternalPackages: ['gamedig'],
 };
 
 export default nextConfig;
