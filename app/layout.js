@@ -42,6 +42,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body
         className={`${orbitron.variable} ${rajdhani.variable} ${chakra.variable}`}
+        suppressHydrationWarning
       >
         {children}
       </body>
