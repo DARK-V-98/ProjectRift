@@ -1,0 +1,22 @@
+{
+  "name": "project-rift",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PROJECT RIFT - Ultra-premium futuristic multiplayer gaming platform homepage",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "firebase": "^11.1.0",
+    "next": "^15.5.19",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^9",
+    "eslint-config-next": "^15.5.19"
+  }
+}
