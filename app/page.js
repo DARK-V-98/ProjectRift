@@ -4,7 +4,7 @@ import Reveal from "@/components/Reveal";
 import BlastDoors from "@/components/BlastDoors";
 import Particles from "@/components/Particles";
 import { Icon } from "@/components/Icons";
-import { getStats, getServers } from "@/lib/data";
+import { getServers } from "@/lib/data";
 
 export const revalidate = 60; // refresh server/player data every minute
 
@@ -17,14 +17,7 @@ const features = [
 ];
 
 export default async function Home() {
-  const [stats, servers] = await Promise.all([getStats(), getServers()]);
-
-  const statCards = [
-    { icon: Icon.server, num: stats.serversOnline, label: "Servers Online" },
-    { icon: Icon.players, num: stats.playersOnline, label: "Players Online" },
-    { icon: Icon.chat, num: stats.discordMembers, label: "Discord Members" },
-    { icon: Icon.pulse, num: stats.uptime, label: "Uptime" },
-  ];
+  const servers = await getServers();
 
   return (
     <>
@@ -64,25 +57,6 @@ export default async function Home() {
           </div>
         </div>
       </header>
-
-      {/* ============ STATS ============ */}
-      <section className="stats">
-        <div className="container stats-grid">
-          {statCards.map((s, i) => (
-            <div
-              key={s.label}
-              className="glass stat-card reveal"
-              style={{ transitionDelay: `${i * 0.08}s` }}
-            >
-              <span className="icon">
-                <s.icon style={{ width: 24, height: 24 }} />
-              </span>
-              <div className="stat-num">{s.num}</div>
-              <div className="stat-label">{s.label}</div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* ============ SERVERS ============ */}
       <section className="section" id="servers">

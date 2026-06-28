@@ -1141,25 +1141,43 @@ a {
   text-align: center;
   transition: opacity 0.5s ease;
 }
-.blast-logo .logo-mark {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
-  animation: pulseMark 1.4s ease-in-out infinite;
+/* spinning round logo at the center of the doors */
+.blast-logo {
+  position: relative;
+  width: 148px;
+  height: 148px;
+  display: grid;
+  place-items: center;
 }
-.blast-logo .logo-mark svg { width: 34px; height: 34px; }
-@keyframes pulseMark {
-  0%, 100% { box-shadow: 0 0 30px rgba(176, 38, 255, 0.5); transform: scale(1); }
-  50% { box-shadow: 0 0 55px rgba(176, 38, 255, 0.9); transform: scale(1.06); }
+.blast-logo-img {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #05070d;
+  box-shadow: 0 0 50px rgba(176, 38, 255, 0.65);
+  /* spin until the doors open */
+  animation: blastSpin 2.4s linear infinite, blastGlow 1.6s ease-in-out infinite;
 }
-.blast-title {
-  font-family: var(--font-display);
-  font-weight: 900;
-  letter-spacing: 0.32em;
-  font-size: clamp(1.3rem, 3vw, 2rem);
-  text-indent: 0.32em;
+@keyframes blastSpin {
+  to { transform: rotate(360deg); }
 }
-.blast-title span { color: var(--cyan); }
+@keyframes blastGlow {
+  0%, 100% { box-shadow: 0 0 40px rgba(176, 38, 255, 0.5); }
+  50% { box-shadow: 0 0 70px rgba(176, 38, 255, 0.95), 0 0 30px rgba(0, 229, 255, 0.5); }
+}
+/* counter-rotating accent ring around the logo */
+.blast-logo-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 229, 255, 0.55);
+  border-top-color: rgba(176, 38, 255, 0.9);
+  animation: blastSpinRev 3s linear infinite;
+}
+@keyframes blastSpinRev {
+  to { transform: rotate(-360deg); }
+}
 .blast-loadbar {
   width: 230px;
   max-width: 60vw;

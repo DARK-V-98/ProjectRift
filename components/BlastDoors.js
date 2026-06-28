@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Icon } from "./Icons";
+import Image from "next/image";
 
 // Cinematic intro: two sci-fi blast doors that slide apart on first load,
 // revealing the hero. Respects prefers-reduced-motion (skips straight to open).
@@ -48,13 +48,16 @@ export default function BlastDoors() {
 
       <div className="blast-center">
         <span className="blast-logo">
-          <span className="logo-mark">
-            <Icon.rift />
-          </span>
+          <span className="blast-logo-ring" />
+          <Image
+            src="/logo.png"
+            alt="Project Rift logo"
+            width={132}
+            height={132}
+            className="blast-logo-img"
+            priority
+          />
         </span>
-        <div className="blast-title">
-          PROJECT <span>RIFT</span>
-        </div>
         <div className="blast-loadbar">
           <i />
         </div>
