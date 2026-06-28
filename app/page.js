@@ -259,9 +259,13 @@ export default async function Home() {
           <div className="footer-grid">
             <div className="footer-brand">
               <a href="#home" className="logo">
-                <span className="logo-mark">
-                  <Icon.rift />
-                </span>
+                <Image
+                  src="/logo.png"
+                  alt="Project Rift logo"
+                  width={44}
+                  height={44}
+                  className="logo-img"
+                />
                 <b>
                   PROJECT <span>RIFT</span>
                 </b>

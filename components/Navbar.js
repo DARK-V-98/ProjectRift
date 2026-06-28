@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Icon } from "./Icons";
 
 const links = [
@@ -26,9 +27,14 @@ export default function Navbar() {
     <nav className={`nav ${scrolled ? "scrolled" : ""}`}>
       <div className="container nav-inner">
         <a href="#home" className="logo">
-          <span className="logo-mark">
-            <Icon.rift />
-          </span>
+          <Image
+            src="/logo.png"
+            alt="Project Rift logo"
+            width={44}
+            height={44}
+            className="logo-img"
+            priority
+          />
           <b>
             PROJECT <span>RIFT</span>
           </b>

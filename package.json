@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "firebase": "^11.1.0",
@@ -17,6 +18,8 @@
   },
   "devDependencies": {
     "eslint": "^9",
-    "eslint-config-next": "^15.5.19"
+    "eslint-config-next": "^15.5.19",
+    "png-to-ico": "^3.0.1",
+    "sharp": "^0.35.2"
   }
 }
