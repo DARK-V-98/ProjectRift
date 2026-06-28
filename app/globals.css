@@ -391,9 +391,12 @@ a {
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-/* legacy hero scene (kept for reference, unused) */
-.hero-old-unused {
-  min-height: 100vh;
+/* mobile-only hero copy + image (shown via media query below) */
+.hero-mobile {
+  display: none;
+}
+.hero-img-mobile {
+  display: none;
 }
 
 /* cinematic scene layers */
@@ -1215,10 +1218,59 @@ a {
 .blast.opening .blast-center { opacity: 0; }
 .blast.opening .blast-seam { opacity: 0; }
 
-@media (max-width: 560px) {
-  .hero-cta-overlay { bottom: 8%; gap: 12px; padding: 14px 16px; }
-  .hero-cta-row { flex-direction: column; width: 100%; gap: 10px; }
-  .hero-cta-row .btn { width: 100%; justify-content: center; }
+/* ---- Mobile hero: portrait crop of the poster + our own title ---- */
+@keyframes dropInY {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: none; }
+}
+@media (max-width: 768px) {
+  /* swap to the purpose-made portrait poster, shown in full */
+  .hero-img-desktop { display: none; }
+  .hero-img-mobile {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .hero-cta-overlay { display: none; }
+  /* blend the bottom of the poster into the page */
+  .hero-art-fade {
+    display: block;
+    height: 32%;
+  }
+
+  /* CTAs sit just below the poster, pulled up into its faded edge */
+  .hero-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 14px;
+    position: relative;
+    z-index: 4;
+    margin-top: -16%;
+    padding: 0 22px 44px;
+    animation: dropInY 0.7s 2.65s both;
+  }
+  .hero-mobile .hero-badge {
+    background: rgba(5, 7, 13, 0.6);
+    backdrop-filter: blur(8px);
+  }
+  .hero-mobile .hero-cta-row {
+    flex-direction: column;
+    width: 100%;
+    max-width: 340px;
+    gap: 12px;
+  }
+  .hero-mobile .hero-cta-row .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 16px;
+  }
+
+  /* doors: full coverage + sized logo on mobile */
+  .blast-door { width: 51vw; }
+  .blast-logo { width: 124px; height: 124px; }
+  .blast-logo-img { width: 110px; height: 110px; }
 }
 
 /* ============================================================
@@ -1228,8 +1280,6 @@ a {
   .stats-grid { grid-template-columns: repeat(2, 1fr); }
   .servers-grid { grid-template-columns: repeat(2, 1fr); }
   .features-grid { grid-template-columns: repeat(2, 1fr); }
-  .hero-inner { grid-template-columns: 1fr; }
-  .hero-figure { display: none; }
 }
 @media (max-width: 860px) {
   .nav-links { display: none; }

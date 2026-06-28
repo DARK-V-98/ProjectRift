@@ -36,15 +36,41 @@ export default async function Home() {
             quality={95}
             priority
             sizes="100vw"
-            className="hero-img"
+            className="hero-img hero-img-desktop"
+          />
+          <Image
+            src="/bgmobile.png"
+            alt="Project Rift — Rust. Survive. Build. Conquer."
+            width={941}
+            height={1090}
+            quality={95}
+            priority
+            sizes="100vw"
+            className="hero-img hero-img-mobile"
           />
           <div className="hero-art-top" />
           <div className="hero-art-fade" />
           <Particles count={20} />
         </div>
 
+        {/* Desktop: floating CTA cluster over the full poster */}
         <div className="hero-cta-overlay">
           <span className="hero-badge floating">
+            <span className="dot" /> Season 04 · Now Live
+          </span>
+          <div className="hero-cta-row">
+            <a className="btn btn-primary" href="#servers">
+              Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+            </a>
+            <a className="btn btn-ghost" href="#servers">
+              View Servers
+            </a>
+          </div>
+        </div>
+
+        {/* Mobile: CTAs overlaid on the dedicated portrait poster */}
+        <div className="hero-mobile">
+          <span className="hero-badge">
             <span className="dot" /> Season 04 · Now Live
           </span>
           <div className="hero-cta-row">
