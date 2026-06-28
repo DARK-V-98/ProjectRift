@@ -694,68 +694,12 @@ a {
   margin-top: 4px;
 }
 
+
 /* ============================================================
-   SERVERS
+   SERVERS — Rust Showcase
    ============================================================ */
-.servers-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 22px;
-}
-.server-card {
-  position: relative;
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  min-height: 340px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  padding: 22px;
-  border: 1px solid var(--glass-border);
-  transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.35s;
-  isolation: isolate;
-}
-.server-art {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  opacity: 0.9;
-  transition: transform 0.5s ease;
-}
-.server-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: linear-gradient(to top, rgba(5, 7, 13, 0.96) 18%, rgba(5, 7, 13, 0.5) 55%, rgba(5, 7, 13, 0.2));
-}
-.server-card:hover {
-  transform: translateY(-10px);
-  border-color: var(--glass-border-hover);
-  box-shadow: 0 30px 60px -25px rgba(0, 0, 0, 0.9), 0 0 40px rgba(176, 38, 255, 0.35);
-}
-.server-card:hover .server-art {
-  transform: scale(1.08);
-}
-.server-pattern {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: 16px 16px;
-  opacity: 0.25;
-  mask-image: linear-gradient(to top, transparent, #000);
-  -webkit-mask-image: linear-gradient(to top, transparent, #000);
-}
-.server-top {
-  position: absolute;
-  top: 18px;
-  left: 18px;
-  right: 18px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
+
+/* Keep old badge/tag styles (still used) */
 .badge {
   font-family: var(--font-ui);
   font-weight: 700;
@@ -773,7 +717,7 @@ a {
   color: #2bff88;
   border: 1px solid rgba(43, 255, 136, 0.4);
 }
-.badge-live .dot { background: #2bff88; }
+.badge-live .dot { background: #2bff88; box-shadow: 0 0 10px #2bff88; }
 .badge-soon {
   background: rgba(176, 38, 255, 0.16);
   color: var(--violet);
@@ -785,53 +729,300 @@ a {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--muted);
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.45);
   padding: 5px 10px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(6px);
 }
-.server-name {
+
+/* ── Showcase wrapper ── */
+.rust-showcase {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card), 0 0 60px -20px rgba(176, 38, 255, 0.45);
+  min-height: 480px;
+  transition: box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.rust-showcase:hover {
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--shadow-card), 0 0 90px -20px rgba(176, 38, 255, 0.65), 0 0 40px -10px rgba(0, 229, 255, 0.25);
+}
+
+/* ── Art panel (left) ── */
+.rust-art-panel {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 340px;
+}
+.rust-art-bg-img {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.rust-showcase:hover .rust-art-bg-img {
+  transform: scale(1.06);
+}
+/* CRT scan-lines */
+.rust-scanlines {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.18) 0px,
+    rgba(0, 0, 0, 0.18) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+}
+/* Central glow orb */
+.rust-orb {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(176, 38, 255, 0.55), rgba(138, 43, 226, 0.2) 50%, transparent 72%);
+  filter: blur(24px);
+  z-index: -1;
+  animation: orbPulse 3.5s ease-in-out infinite;
+}
+@keyframes orbPulse {
+  0%, 100% { opacity: 0.7; transform: translate(-50%, -50%) scale(1); }
+  50%       { opacity: 1;   transform: translate(-50%, -50%) scale(1.12); }
+}
+/* Bottom vignette fade into info panel */
+.rust-art-fade {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 7, 13, 0.25) 0%,
+    rgba(5, 7, 13, 0.1) 40%,
+    rgba(5, 7, 13, 0.55) 100%
+  );
+}
+/* Badges row top-left */
+.rust-art-badges {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  z-index: 2;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+/* Game title centered */
+.rust-art-title {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+  z-index: 2;
+}
+.rust-art-title h3 {
   font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.7rem;
-  letter-spacing: 0.02em;
+  font-weight: 900;
+  font-size: clamp(2.6rem, 6vw, 4.2rem);
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-shadow: 0 0 50px rgba(176, 38, 255, 0.7), 0 4px 20px rgba(0,0,0,0.8);
+  background: linear-gradient(135deg, #fff 30%, var(--cyan) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
-.server-players {
+.rust-art-sub {
   font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
   color: var(--muted);
-  font-size: 0.86rem;
-  margin: 8px 0 14px;
+}
+
+/* ── Info panel (right) ── */
+.rust-info-panel {
+  position: relative;
+  background: var(--glass-2);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
+  padding: 44px 44px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-left: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+/* Diagonal accent beam */
+.rust-beam {
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(176, 38, 255, 0.22), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+  animation: beamDrift 6s ease-in-out infinite alternate;
+}
+@keyframes beamDrift {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-20px, 20px) scale(1.1); }
+}
+.rust-info-panel > * { position: relative; z-index: 1; }
+
+.rust-info-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2rem, 4vw, 3rem);
+  letter-spacing: 0.04em;
+  margin: 10px 0 14px;
+  background: linear-gradient(120deg, var(--white) 40%, var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rust-info-desc {
+  color: var(--muted);
+  font-size: 0.94rem;
+  line-height: 1.65;
+  margin-bottom: 28px;
+}
+
+/* Player row */
+.rust-player-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
-.server-players b { color: var(--white); font-size: 1rem; }
-.player-bar {
-  height: 5px;
+.rust-player-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.rust-player-count b {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  color: var(--white);
+}
+.rust-player-count em {
+  font-style: normal;
+  font-family: var(--font-ui);
+  color: var(--muted-dim);
+  font-size: 0.84rem;
+  margin-left: 4px;
+}
+/* Progress bar */
+.rust-bar {
+  position: relative;
+  height: 7px;
   border-radius: 100px;
-  background: rgba(255, 255, 255, 0.1);
-  overflow: hidden;
-  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: visible;
+  margin-bottom: 28px;
 }
-.player-bar i {
-  display: block;
+.rust-bar-fill {
   height: 100%;
   border-radius: 100px;
   background: linear-gradient(90deg, var(--violet), var(--cyan));
+  box-shadow: 0 0 14px rgba(176, 38, 255, 0.7);
+  transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.server-join {
-  width: 100%;
-  justify-content: center;
-  font-size: 0.8rem;
-  padding: 12px;
+.rust-bar-pct {
+  position: absolute;
+  right: 0;
+  top: -22px;
+  font-family: var(--font-ui);
+  font-size: 0.72rem;
+  color: var(--cyan);
+  letter-spacing: 0.06em;
 }
-.server-join.disabled {
-  background: rgba(255, 255, 255, 0.05);
+
+/* Stat chips */
+.rust-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+}
+.rust-stat {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  background: rgba(176, 38, 255, 0.08);
+  border: 1px solid var(--glass-border);
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  color: var(--muted);
+  transition: border-color 0.25s, background 0.25s;
+}
+.rust-stat:hover {
+  border-color: var(--glass-border-hover);
+  background: rgba(0, 229, 255, 0.06);
+}
+.rust-stat b {
+  color: var(--white);
+  font-size: 0.82rem;
+}
+.rust-stat svg { color: var(--cyan); flex-shrink: 0; }
+
+/* CTA */
+.rust-cta {
+  align-self: flex-start;
+  margin-bottom: 18px;
+  font-size: 0.9rem;
+  padding: 16px 34px;
+}
+.rust-cta.disabled {
+  background: rgba(255, 255, 255, 0.04);
   color: var(--muted-dim);
   border: 1px solid rgba(255, 255, 255, 0.08);
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* Connection info */
+.rust-connect {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 0.76rem;
+  color: var(--muted-dim);
+  letter-spacing: 0.06em;
+}
+.rust-connect code {
+  font-family: var(--font-body);
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.08);
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  font-size: 0.76rem;
+}
+
 
 /* ============================================================
    FEATURES
@@ -932,17 +1123,57 @@ a {
   gap: 24px;
 }
 .partner-card {
+  position: relative;
   padding: 40px;
   display: flex;
   gap: 24px;
   align-items: flex-start;
   transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  overflow: hidden;        /* keeps bg image clipped to card shape */
+  isolation: isolate;
 }
 .partner-card:hover {
   transform: translateY(-6px);
   border-color: var(--glass-border-hover);
   box-shadow: var(--shadow-card), var(--glow-cyan);
 }
+
+/* ---------- blurred background layer ---------- */
+.partner-card-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.partner-bg-img {
+  object-fit: cover;
+  object-position: center;
+  filter: blur(6px) saturate(0.7) brightness(0.35);
+  transform: scale(1.08);   /* prevent blur edge bleed */
+  transition: filter 0.4s ease;
+}
+/* desktop image shown by default, mobile hidden */
+.partner-bg-desktop { display: block; }
+.partner-bg-mobile  { display: none;  }
+
+/* dark gradient overlay so text stays legible */
+.partner-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg,
+      rgba(5, 7, 13, 0.72) 0%,
+      rgba(8, 10, 20, 0.55) 100%);
+  backdrop-filter: blur(0px); /* handled on the img itself */
+}
+
+/* hover: slightly lighten the bg */
+.partner-card:hover .partner-bg-img {
+  filter: blur(5px) saturate(0.85) brightness(0.42);
+}
+
+/* ---------- logo ---------- */
 .partner-logo {
   width: 70px;
   height: 70px;
@@ -950,12 +1181,16 @@ a {
   border-radius: 16px;
   display: grid;
   place-items: center;
-  font-family: var(--font-display);
-  font-weight: 800;
-  font-size: 1.5rem;
-  background: linear-gradient(135deg, rgba(176, 38, 255, 0.25), rgba(0, 229, 255, 0.18));
+  background: rgba(5, 7, 13, 0.65);
   border: 1px solid var(--glass-border);
   box-shadow: var(--glow-violet);
+  overflow: hidden;
+}
+.partner-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 14px;
 }
 .partner-card .role {
   font-family: var(--font-ui);
@@ -1105,6 +1340,31 @@ a {
   font-size: 0.84rem;
   flex-wrap: wrap;
   gap: 14px;
+}
+
+/* ESYSTEMLK links — partner card heading + footer */
+.partner-name-link {
+  color: inherit;
+  text-decoration: none;
+  background: linear-gradient(120deg, var(--violet), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: opacity 0.2s ease;
+}
+.partner-name-link:hover {
+  opacity: 0.82;
+}
+.footer-partner-link {
+  color: var(--muted);
+  text-decoration: underline;
+  text-decoration-color: rgba(0, 229, 255, 0.3);
+  text-underline-offset: 3px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+.footer-partner-link:hover {
+  color: var(--cyan);
+  text-decoration-color: var(--cyan);
 }
 
 /* ============================================================
@@ -1346,6 +1606,41 @@ a {
   .blast-door { width: 51vw; }
   .blast-logo { width: 124px; height: 124px; }
   .blast-logo-img { width: 110px; height: 110px; }
+
+  /* partners: swap to portrait bg image + single column */
+  .partners-grid {
+    grid-template-columns: 1fr;
+  }
+  .partner-card {
+    padding: 28px 22px;
+  }
+  /* swap desktop bg for mobile portrait */
+  .partner-bg-desktop { display: none; }
+  .partner-bg-mobile  { display: block; }
+
+  /* rust server showcase: stack vertically */
+  .rust-showcase {
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+  .rust-art-panel {
+    min-height: 260px;
+  }
+  .rust-art-title h3 {
+    font-size: 2.6rem;
+  }
+  .rust-info-panel {
+    padding: 30px 24px 28px;
+    border-left: none;
+    border-top: 1px solid var(--glass-border);
+  }
+  .rust-stats {
+    gap: 8px;
+  }
+  .rust-cta {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ============================================================

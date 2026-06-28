@@ -93,61 +93,121 @@ export default async function Home() {
               Choose Your <span className="accent">Battlefield</span>
             </h2>
             <p>
-              Hand-tuned, high-performance servers across the most demanding
-              survival and roleplay titles in gaming.
+              One premium Rust server — bare-metal hardware, zero compromise.
             </p>
           </div>
 
-          <div className="servers-grid">
-            {servers.map((srv, i) => {
-              const live = srv.status === "LIVE";
-              const pct = srv.maxPlayers
-                ? Math.round((srv.players / srv.maxPlayers) * 100)
-                : 0;
-              return (
-                <article
-                  key={srv.id}
-                  className="server-card reveal"
-                  style={{ transitionDelay: `${i * 0.08}s` }}
-                >
-                  <div className="server-art" style={{ background: srv.art }} />
-                  <div className="server-pattern" />
-                  <div className="server-top">
+          {servers.map((srv) => {
+            const live = srv.status === "LIVE";
+            const pct = srv.maxPlayers
+              ? Math.round((srv.players / srv.maxPlayers) * 100)
+              : 0;
+            return (
+              <article key={srv.id} className="rust-showcase reveal">
+
+                {/* ── Left: Art panel ── */}
+                <div className="rust-art-panel">
+                  {/* Actual game poster image */}
+                  <Image
+                    src="/rust.png"
+                    alt={srv.name}
+                    fill
+                    sizes="(max-width: 900px) 100vw, 420px"
+                    quality={95}
+                    className="rust-art-bg-img"
+                  />
+                  {/* scan-line texture */}
+                  <div className="rust-scanlines" />
+                  {/* central glow orb */}
+                  <div className="rust-orb" />
+                  {/* bottom fade into info panel */}
+                  <div className="rust-art-fade" />
+
+                  {/* Top-left badges */}
+                  <div className="rust-art-badges">
                     <span className="server-tag">{srv.tag}</span>
                     <span className={`badge ${live ? "badge-live" : "badge-soon"}`}>
                       {live && <span className="dot" />}
                       {srv.status}
                     </span>
                   </div>
-                  <h3 className="server-name">{srv.name}</h3>
+
+                  {/* Centered game title */}
+                  <div className="rust-art-title">
+                    <h3>{srv.name}</h3>
+                    <span className="rust-art-sub">Project Rift</span>
+                  </div>
+                </div>
+
+                {/* ── Right: Info panel ── */}
+                <div className="rust-info-panel">
+                  {/* Accent beam */}
+                  <div className="rust-beam" />
+
+                  <span className="eyebrow">Now Playing</span>
+                  <h2 className="rust-info-title">{srv.name}</h2>
+                  <p className="rust-info-desc">
+                    Bare-metal nodes, NVMe storage and sub-20ms tick rates —
+                    engineered for competitive survival gameplay with zero pay-to-win.
+                  </p>
+
+                  {/* Player count + bar */}
+                  <div className="rust-player-row">
+                    <div className="rust-player-label">
+                      <Icon.players style={{ width: 15, height: 15 }} />
+                      <span>Players Online</span>
+                    </div>
+                    <span className="rust-player-count">
+                      <b>{srv.players}</b>
+                      <em>/ {srv.maxPlayers}</em>
+                    </span>
+                  </div>
+                  <div className="rust-bar">
+                    <div
+                      className="rust-bar-fill"
+                      style={{ width: `${pct}%` }}
+                    />
+                    <span className="rust-bar-pct">{pct}%</span>
+                  </div>
+
+                  {/* Stat chips */}
+                  <div className="rust-stats">
+                    <div className="rust-stat">
+                      <Icon.bolt style={{ width: 16, height: 16 }} />
+                      <span>Region</span>
+                      <b>Asia Pacific</b>
+                    </div>
+                    <div className="rust-stat">
+                      <Icon.shield style={{ width: 16, height: 16 }} />
+                      <b>Active Admins</b>
+                    </div>
+                    <div className="rust-stat">
+                      <Icon.scale style={{ width: 16, height: 16 }} />
+                      <span>Wipe</span>
+                      <b>Monthly</b>
+                    </div>
+                  </div>
+
+                  {/* CTA */}
                   {live ? (
-                    <>
-                      <div className="server-players">
-                        <Icon.players style={{ width: 16, height: 16 }} />
-                        <b>{srv.players}</b> / {srv.maxPlayers} players
-                      </div>
-                      <div className="player-bar">
-                        <i style={{ width: `${pct}%` }} />
-                      </div>
-                      <a className="btn btn-primary server-join" href="#">
-                        Join Now
-                      </a>
-                    </>
+                    <a className="btn btn-primary rust-cta" href="#">
+                      Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+                    </a>
                   ) : (
-                    <>
-                      <div className="server-players">Launching this season</div>
-                      <div className="player-bar">
-                        <i style={{ width: "0%" }} />
-                      </div>
-                      <button className="btn server-join disabled" disabled>
-                        Coming Soon
-                      </button>
-                    </>
+                    <button className="btn rust-cta disabled" disabled>
+                      Coming Soon
+                    </button>
                   )}
-                </article>
-              );
-            })}
-          </div>
+
+                  {/* Connection info */}
+                  <div className="rust-connect">
+                    <Icon.players style={{ width: 13, height: 13 }} />
+                    <span>connect <code>play.projectrift.gg</code></span>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
@@ -224,22 +284,81 @@ export default async function Home() {
           </div>
 
           <div className="partners-grid">
+            {/* ---- ESYSTEMLK card ---- */}
             <div className="glass partner-card reveal">
-              <div className="partner-logo">E</div>
+              {/* Blurred background images — desktop + mobile */}
+              <div className="partner-card-bg" aria-hidden="true">
+                <Image
+                  src="/bg.png"
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="partner-bg-img partner-bg-desktop"
+                />
+                <Image
+                  src="/bgmobile.png"
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  className="partner-bg-img partner-bg-mobile"
+                />
+                <div className="partner-bg-overlay" />
+              </div>
+              {/* Logo */}
+              <div className="partner-logo">
+                <Image
+                  src="/es.png"
+                  alt="ESYSTEMLK logo"
+                  width={70}
+                  height={70}
+                  className="partner-logo-img"
+                />
+              </div>
               <div>
                 <span className="role">Powered By</span>
-                <h3>ESYSTEMLK</h3>
+                <h3>
+                  <a href="https://www.esystemlk.com" target="_blank" rel="noreferrer" className="partner-name-link">ESYSTEMLK</a>
+                </h3>
                 <p>
                   Providing powerful infrastructure and financial support to keep
                   the network blazing fast and always online.
                 </p>
               </div>
             </div>
+
+            {/* ---- TEAM 9Z card ---- */}
             <div
               className="glass partner-card reveal"
               style={{ transitionDelay: "0.1s" }}
             >
-              <div className="partner-logo">9Z</div>
+              {/* Blurred background images — desktop + mobile */}
+              <div className="partner-card-bg" aria-hidden="true">
+                <Image
+                  src="/bg.png"
+                  alt=""
+                  fill
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  className="partner-bg-img partner-bg-desktop"
+                />
+                <Image
+                  src="/bgmobile.png"
+                  alt=""
+                  fill
+                  sizes="100vw"
+                  className="partner-bg-img partner-bg-mobile"
+                />
+                <div className="partner-bg-overlay" />
+              </div>
+              {/* Logo */}
+              <div className="partner-logo">
+                <Image
+                  src="/z9.png"
+                  alt="Team 9Z logo"
+                  width={70}
+                  height={70}
+                  className="partner-logo-img"
+                />
+              </div>
               <div>
                 <span className="role">Managed By</span>
                 <h3>TEAM 9Z</h3>
@@ -339,7 +458,9 @@ export default async function Home() {
           <div className="footer-bottom">
             <span>© {new Date().getFullYear()} Project Rift. All rights reserved.</span>
             <span>
-              Powered by ESYSTEMLK · Managed by TEAM 9Z
+              Powered by{" "}
+              <a href="https://www.esystemlk.com" target="_blank" rel="noreferrer" className="footer-partner-link">ESYSTEMLK</a>
+              {" "}· Managed by TEAM 9Z
             </span>
           </div>
         </div>
