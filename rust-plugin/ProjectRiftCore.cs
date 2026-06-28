@@ -46,8 +46,8 @@ namespace Oxide.Plugins
             [JsonProperty("Discord invite URL")]
             public string DiscordUrl = "https://discord.gg/yourinvite";
 
-            [JsonProperty("Loading-screen header image URL (shown by Rust)")]
-            public string HeaderImageUrl = "https://projectrift.esystemlk.com/bg.png";
+            [JsonProperty("Loading-screen header image URL (512x256, shown by Rust)")]
+            public string HeaderImageUrl = "https://projectrift.esystemlk.com/serverheader.png";
 
             [JsonProperty("In-game welcome overlay background image URL")]
             public string WelcomeImageUrl = "https://projectrift.esystemlk.com/bgmobile.png";
