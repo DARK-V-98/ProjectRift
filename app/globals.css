@@ -951,7 +951,7 @@ a {
 .rust-bar-pct {
   position: absolute;
   right: 0;
-  top: -22px;
+  top: 12px;
   font-family: var(--font-ui);
   font-size: 0.72rem;
   color: var(--cyan);

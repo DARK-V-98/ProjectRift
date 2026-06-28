@@ -190,7 +190,7 @@ export default async function Home() {
 
                   {/* CTA */}
                   {live ? (
-                    <a className="btn btn-primary rust-cta" href="#">
+                    <a className="btn btn-primary rust-cta" href="steam://connect/51.79.218.241:20215">
                       Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
                     </a>
                   ) : (
