@@ -253,6 +253,37 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* ============ CTA BANNER ============ */}
+      <section className="cta-banner-section">
+        <div className="container">
+          <div className="cta-banner reveal">
+            <Image
+              src="/fsec.png"
+              alt="Ready to enter the Rift? Join thousands of survivors and experience the ultimate Rust journey."
+              width={1983}
+              height={793}
+              quality={95}
+              sizes="(max-width: 1280px) 100vw, 1280px"
+              className="cta-banner-img"
+            />
+            <div className="cta-banner-actions">
+              <a className="btn btn-primary" href="#servers">
+                Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+              </a>
+              <a
+                className="btn btn-discord"
+                href="https://discord.gg"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Icon.discord style={{ width: 20, height: 20 }} />
+                Join Discord
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ============ FOOTER ============ */}
       <footer className="footer" id="whitelist">
         <div className="container">

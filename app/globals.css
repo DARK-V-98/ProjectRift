@@ -976,6 +976,64 @@ a {
 }
 
 /* ============================================================
+   CTA BANNER
+   ============================================================ */
+.cta-banner-section {
+  position: relative;
+  padding: 30px 0 70px;
+}
+.cta-banner {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-card), 0 0 50px -10px rgba(176, 38, 255, 0.4);
+  line-height: 0;
+}
+.cta-banner-img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+/* action buttons overlaid on the lower-center of the banner */
+.cta-banner-actions {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+  z-index: 2;
+}
+/* On phones the wide banner is short — drop buttons below it instead */
+@media (max-width: 768px) {
+  .cta-banner-section { padding: 10px 0 50px; }
+  .cta-banner {
+    overflow: visible;
+    border: none;
+    box-shadow: none;
+  }
+  .cta-banner-img {
+    border-radius: 16px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-card), 0 0 40px -12px rgba(176, 38, 255, 0.4);
+  }
+  .cta-banner-actions {
+    position: static;
+    transform: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .cta-banner-actions .btn {
+    width: 100%;
+    max-width: 340px;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
    FOOTER
    ============================================================ */
 .footer {
@@ -1232,6 +1290,23 @@ a {
     height: auto;
   }
   .hero-cta-overlay { display: none; }
+  /* push the poster below the fixed navbar so its baked-in
+     "PROJECT RIFT" header doesn't collide with the nav */
+  .hero-art {
+    padding-top: 66px;
+    background: var(--bg);
+  }
+  /* solid bar behind the navbar for clean legibility */
+  .hero-art-top {
+    height: 150px;
+    background: linear-gradient(
+      to bottom,
+      var(--bg) 0,
+      var(--bg) 40%,
+      rgba(5, 7, 13, 0.6) 70%,
+      transparent
+    );
+  }
   /* blend the bottom of the poster into the page */
   .hero-art-fade {
     display: block;
@@ -1298,6 +1373,17 @@ a {
   .logo-mark { width: 32px; height: 32px; }
   .logo-img { width: 36px; height: 36px; }
   .btn-discord { padding: 11px 16px; font-size: 0.78rem; }
+}
+
+/* Phones: nav items don't fit alongside the wordmark — drop it
+   (the hero poster already carries the PROJECT RIFT branding) and
+   tighten gutters so the Discord button + menu never overflow. */
+@media (max-width: 480px) {
+  .container { padding: 0 18px; }
+  .logo b { display: none; }
+  .nav-right { gap: 10px; }
+  .btn-discord { padding: 10px 14px; font-size: 0.76rem; }
+  .btn-discord svg { width: 16px; height: 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
