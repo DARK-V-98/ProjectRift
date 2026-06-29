@@ -27,7 +27,7 @@ using Time = UnityEngine.Time;
 
 namespace Oxide.Plugins
 {
-    [Info("ProjectRiftCore", "ESYSTEMLK", "1.9.0")]
+    [Info("ProjectRiftCore", "ESYSTEMLK", "1.9.1")]
     [Description("Live heartbeat + modern in-game UI (HUD, radiation warning, notifications, welcome, info, death screen) for Project Rift.")]
     public class ProjectRiftCore : RustPlugin
     {
@@ -606,6 +606,11 @@ namespace Oxide.Plugins
                 catch (Exception e) { PrintWarning("Notification parse failed: " + e.Message); }
             }, this, RequestMethod.GET, null, 8f);
         }
+
+        // Public API for other plugins (e.g. RiftStorm) — call via
+        // ProjectRiftCore.Call("PushNotification", message, type).
+        public void PushNotification(string message, string type) =>
+            ShowNotificationAll("RIFT STORM", message, string.IsNullOrEmpty(type) ? "alert" : type, 7f);
 
         private void ShowNotificationAll(string title, string message, string type, float duration)
         {
