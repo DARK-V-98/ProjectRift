@@ -72,7 +72,12 @@ defined in Step 02. By the end you have a complete, compilable plugin.
 - [x] Error handling, logging, performance (Step 16)
 - [x] Future-version roadmap (Step 17)
 
-> **Status:** Design + source-skeleton documentation. Code blocks are written to
-> be production-shaped (real Rust/Carbon APIs, real CUI), but you should compile
-> and field-test on a staging server before going live — Rust API surface
-> changes across forced wipes.
+> **Status:** Design docs **+ a complete shippable plugin**. The full working
+> source is at [`dist/RiftStorm.cs`](dist/RiftStorm.cs) — a single Carbon/Oxide
+> `RustPlugin` implementing every phase, manager, the CUI HUD, Discord webhooks,
+> the website push, and the admin commands. Companion website endpoint:
+> [`app/api/rift/route.js`](../../app/api/rift/route.js).
+>
+> Code follows real Rust/Carbon APIs and CUI, but compile + field-test on a
+> staging server before going live — Rust's API surface changes across forced
+> wipes (prefab paths are configurable for exactly this reason).
