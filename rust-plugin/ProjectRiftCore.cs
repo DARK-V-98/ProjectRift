@@ -27,7 +27,7 @@ using Time = UnityEngine.Time;
 
 namespace Oxide.Plugins
 {
-    [Info("ProjectRiftCore", "ESYSTEMLK", "1.7.1")]
+    [Info("ProjectRiftCore", "ESYSTEMLK", "1.9.0")]
     [Description("Live heartbeat + modern in-game UI (HUD, radiation warning, notifications, welcome, info, death screen) for Project Rift.")]
     public class ProjectRiftCore : RustPlugin
     {
@@ -95,6 +95,18 @@ namespace Oxide.Plugins
             [JsonProperty("Radiation enter alarm effect prefab")]
             public string RadiationEnterPrefab = "assets/prefabs/locks/keypad/effects/lock.code.denied.prefab";
 
+            [JsonProperty("Custom vitals bars (HP/water/food) over the default bars")]
+            public bool VitalsEnabled = true;
+
+            // Anchored to the BOTTOM-RIGHT corner with pixel offsets so it lines
+            // up on every resolution/aspect ratio (same as Rust's native bars).
+            // Nudge these until the dark panel fully covers the default bars.
+            [JsonProperty("Vitals panel offset min (px from bottom-right corner, e.g. \"-300 16\")")]
+            public string VitalsOffsetMin = "-300 16";
+
+            [JsonProperty("Vitals panel offset max (px from bottom-right corner, e.g. \"-8 176\")")]
+            public string VitalsOffsetMax = "-8 176";
+
             [JsonProperty("Show welcome screen on connect")]
             public bool ShowWelcomeScreen = true;
 
@@ -157,6 +169,7 @@ namespace Oxide.Plugins
         private const string NotifyName = "ProjectRift.Notify";
         private const string RadName   = "ProjectRift.Rad";
         private const string StatsName = "ProjectRift.Stats";
+        private const string StatsBarsName = "ProjectRift.Stats.b";
 
         // cached radiation trigger colliders + per-player last shown warning
         private readonly List<Collider> radZones = new List<Collider>();
@@ -224,13 +237,14 @@ namespace Oxide.Plugins
             // Refresh the HUD (name + playtime) every minute.
             timer.Every(60f, RefreshHudAll);
 
-            // Refresh vitals bars (health / hydration / food) every 2 s.
-            timer.Every(2f, () =>
+            // Refresh ONLY the vitals bar fills every second (the opaque cover
+            // persists, so the default bars never flash through).
+            timer.Every(1f, () =>
             {
-                if (!config.HudEnabled) return;
+                if (!config.VitalsEnabled) return;
                 foreach (var p in BasePlayer.activePlayerList)
-                    if (p != null && p.IsConnected && !p.IsDead())
-                        BuildStats(p);
+                    if (p != null && p.IsConnected && !p.IsDead() && !p.IsSleeping())
+                        RefreshStatsBars(p);
             });
             // (re)draw HUD + start session timers for everyone already online.
             foreach (var p in BasePlayer.activePlayerList)
@@ -358,11 +372,11 @@ namespace Oxide.Plugins
             int max = ConVar.Server.maxplayers;
             var c = new CuiElementContainer();
 
-            // compact frosted-glass card, top-right
+            // frosted-glass card, top-right
             string card = c.Add(new CuiPanel
             {
                 Image = { Color = Glass, Material = Blur },
-                RectTransform = { AnchorMin = "0.85 0.9", AnchorMax = "0.998 0.988" }
+                RectTransform = { AnchorMin = "0.84 0.878", AnchorMax = "0.998 0.988" }
             }, "Hud", HudName);
 
             // left accent bar
@@ -372,7 +386,7 @@ namespace Oxide.Plugins
                 RectTransform = { AnchorMin = "0 0", AnchorMax = "0.014 1" }
             }, card);
 
-            // ---- server logo (no player avatar / name) ----
+            // ---- server logo (no player avatar) ----
             string logoPng = ImageLibrary?.Call("GetImage", "rift_logo", 0UL) as string;
             var logoImg = new CuiRawImageComponent();
             if (!string.IsNullOrEmpty(logoPng)) logoImg.Png = logoPng;
@@ -383,22 +397,31 @@ namespace Oxide.Plugins
                 Components =
                 {
                     logoImg,
-                    new CuiRectTransformComponent { AnchorMin = "0.06 0.5", AnchorMax = "0.06 0.5", OffsetMin = "2 -20", OffsetMax = "42 20" }
+                    new CuiRectTransformComponent { AnchorMin = "0.06 0.5", AnchorMax = "0.06 0.5", OffsetMin = "2 -22", OffsetMax = "44 22" }
                 }
             });
 
-            // playtime (top line)
+            // player name
+            string name = player.displayName ?? "Survivor";
+            if (name.Length > 15) name = name.Substring(0, 15) + "…";
             c.Add(new CuiLabel
             {
-                Text = { Text = $"<color=#9aa3c4>PLAYTIME</color>  <color=#00e5ff>{PlaytimeText(player)}</color>", FontSize = 12, Font = FontReg, Align = TextAnchor.LowerLeft, Color = Muted },
-                RectTransform = { AnchorMin = "0.3 0.5", AnchorMax = "0.97 0.9" }
+                Text = { Text = name, FontSize = 14, Font = FontBold, Align = TextAnchor.LowerLeft, Color = White },
+                RectTransform = { AnchorMin = "0.3 0.64", AnchorMax = "0.97 0.93" }
             }, card);
 
-            // online count (bottom line)
+            // playtime
             c.Add(new CuiLabel
             {
-                Text = { Text = $"<color=#2bff88>●</color>  {players}<color=#9aa3c4>/{max}</color>  ONLINE", FontSize = 12, Font = FontReg, Align = TextAnchor.UpperLeft, Color = "0.82 0.85 0.94 1" },
-                RectTransform = { AnchorMin = "0.3 0.1", AnchorMax = "0.97 0.5" }
+                Text = { Text = $"<color=#9aa3c4>PLAYTIME</color>  <color=#00e5ff>{PlaytimeText(player)}</color>", FontSize = 11, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = Muted },
+                RectTransform = { AnchorMin = "0.3 0.38", AnchorMax = "0.97 0.62" }
+            }, card);
+
+            // online count
+            c.Add(new CuiLabel
+            {
+                Text = { Text = $"<color=#2bff88>●</color>  {players}<color=#9aa3c4>/{max}</color>  ONLINE", FontSize = 12, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = "0.82 0.85 0.94 1" },
+                RectTransform = { AnchorMin = "0.3 0.08", AnchorMax = "0.97 0.36" }
             }, card);
 
             CuiHelper.AddUi(player, c);
@@ -407,10 +430,72 @@ namespace Oxide.Plugins
         #endregion
 
         #region Vitals HUD (health / hydration / food — live progress bars)
+        // Builds the PERSISTENT opaque cover (hides the default bars 100%, never
+        // flickers) then fills in the bars. Called on spawn / wake / periodically.
         private void BuildStats(BasePlayer player)
         {
-            if (!config.HudEnabled || player == null || !player.IsConnected) return;
+            if (!config.VitalsEnabled || player == null || !player.IsConnected) return;
             CuiHelper.DestroyUi(player, StatsName);
+            if (player.IsSleeping() || player.IsDead()) return;
+
+            string urlBase = (config.WebsiteUrl ?? "").TrimEnd('/');
+            var c = new CuiElementContainer();
+
+            // ROUNDED opaque panel (tinted dark) on the Overlay layer, pinned to
+            // the bottom-right corner so it covers the default bars on any monitor.
+            string panelPng = ImageLibrary?.Call("GetImage", "rift_panel", 0UL) as string;
+            var panel = new CuiRawImageComponent { Color = "0.04 0.03 0.07 1" };
+            if (!string.IsNullOrEmpty(panelPng)) panel.Png = panelPng;
+            else panel.Url = urlBase + "/ui/panel.png";
+            c.Add(new CuiElement
+            {
+                Name = StatsName,
+                Parent = "Overlay",
+                Components =
+                {
+                    panel,
+                    new CuiRectTransformComponent { AnchorMin = "1 0", AnchorMax = "1 0", OffsetMin = config.VitalsOffsetMin, OffsetMax = config.VitalsOffsetMax }
+                }
+            });
+
+            // static icons (heart / droplet / cutlery), tinted per stat colour
+            AddStatIcon(c, StatsName, urlBase, 0.67f, 0.96f, "rift_hp",    "/ui/hp.png",    HealthGreen);
+            AddStatIcon(c, StatsName, urlBase, 0.355f, 0.645f, "rift_water", "/ui/water.png", HydroBlue);
+            AddStatIcon(c, StatsName, urlBase, 0.04f, 0.33f,  "rift_cal",   "/ui/cal.png",   FoodOrange);
+
+            CuiHelper.AddUi(player, c);
+            RefreshStatsBars(player);
+        }
+
+        private void AddStatIcon(CuiElementContainer c, string parent, string urlBase,
+            float yMin, float yMax, string imgName, string urlPath, string color)
+        {
+            string png = ImageLibrary?.Call("GetImage", imgName, 0UL) as string;
+            var img = new CuiRawImageComponent { Color = color };
+            if (!string.IsNullOrEmpty(png)) img.Png = png;
+            else img.Url = urlBase + urlPath;
+            c.Add(new CuiElement
+            {
+                Parent = parent,
+                Components =
+                {
+                    img,
+                    new CuiRectTransformComponent
+                    {
+                        AnchorMin = $"0.07 {(yMin + 0.02f).ToString(CultureInfo.InvariantCulture)}",
+                        AnchorMax = $"0.19 {(yMax - 0.02f).ToString(CultureInfo.InvariantCulture)}"
+                    }
+                }
+            });
+        }
+
+        // Updates ONLY the bar fills/values inside the persistent cover, so the
+        // default bars are never revealed between refreshes (no flicker-through).
+        private void RefreshStatsBars(BasePlayer player)
+        {
+            if (!config.VitalsEnabled || player == null || !player.IsConnected) return;
+            CuiHelper.DestroyUi(player, StatsBarsName);
+            if (player.IsSleeping() || player.IsDead()) return;
 
             float hp       = player.health;
             float hpMax    = player.MaxHealth();
@@ -424,60 +509,33 @@ namespace Oxide.Plugins
             float foodPct  = foodMax  > 0 ? Mathf.Clamp01(food  / foodMax)  : 0f;
 
             var c = new CuiElementContainer();
-
-            // frosted-glass vitals card — sits just below the main HUD card
-            string card = c.Add(new CuiPanel
+            string box = c.Add(new CuiPanel
             {
-                Image = { Color = Glass, Material = Blur },
-                RectTransform = { AnchorMin = "0.85 0.820", AnchorMax = "0.998 0.895" }
-            }, "Hud", StatsName);
+                Image = { Color = "0 0 0 0" },
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" }
+            }, StatsName, StatsBarsName);
 
-            // purple left accent bar (matches the main HUD card style)
-            c.Add(new CuiPanel
-            {
-                Image = { Color = Purple },
-                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.014 1" }
-            }, card);
-
-            // three stat rows: health (top), hydration (mid), food (bottom)
-            AddStatBar(c, card, 0.67f, 0.96f, "HP",
-                $"{Mathf.RoundToInt(hp)} / {Mathf.RoundToInt(hpMax)}",
-                hpPct, HealthGreen);
-
-            AddStatBar(c, card, 0.35f, 0.63f, "HYD",
-                $"{Mathf.RoundToInt(hydro)} / {Mathf.RoundToInt(hydroMax)}",
-                hydroPct, HydroBlue);
-
-            AddStatBar(c, card, 0.03f, 0.31f, "CAL",
-                $"{Mathf.RoundToInt(food)} / {Mathf.RoundToInt(foodMax)}",
-                foodPct, FoodOrange);
+            AddStatBar(c, box, 0.67f, 0.96f,
+                $"{Mathf.RoundToInt(hp)} / {Mathf.RoundToInt(hpMax)}", hpPct, HealthGreen);
+            AddStatBar(c, box, 0.355f, 0.645f,
+                $"{Mathf.RoundToInt(hydro)} / {Mathf.RoundToInt(hydroMax)}", hydroPct, HydroBlue);
+            AddStatBar(c, box, 0.04f, 0.33f,
+                $"{Mathf.RoundToInt(food)} / {Mathf.RoundToInt(foodMax)}", foodPct, FoodOrange);
 
             CuiHelper.AddUi(player, c);
         }
 
         private void AddStatBar(CuiElementContainer c, string parent,
-            float yMin, float yMax, string icon, string valueLabel, float pct, string barColor)
+            float yMin, float yMax, string valueLabel, float pct, string barColor)
         {
-            // coloured icon/label
-            c.Add(new CuiLabel
-            {
-                Text = { Text = icon, FontSize = 9, Font = FontBold,
-                         Align = TextAnchor.MiddleLeft, Color = barColor },
-                RectTransform =
-                {
-                    AnchorMin = $"0.03 {yMin.ToString(CultureInfo.InvariantCulture)}",
-                    AnchorMax = $"0.17 {yMax.ToString(CultureInfo.InvariantCulture)}"
-                }
-            }, parent);
-
-            // dark track background
+            // dark track background (icon sits to the left, drawn in the cover)
             string track = c.Add(new CuiPanel
             {
                 Image = { Color = "1 1 1 0.07" },
                 RectTransform =
                 {
-                    AnchorMin = $"0.18 {(yMin + 0.06f).ToString(CultureInfo.InvariantCulture)}",
-                    AnchorMax = $"0.73 {(yMax - 0.06f).ToString(CultureInfo.InvariantCulture)}"
+                    AnchorMin = $"0.24 {(yMin + 0.05f).ToString(CultureInfo.InvariantCulture)}",
+                    AnchorMax = $"0.66 {(yMax - 0.05f).ToString(CultureInfo.InvariantCulture)}"
                 }
             }, parent);
 
@@ -496,12 +554,12 @@ namespace Oxide.Plugins
             // numeric value (right of bar)
             c.Add(new CuiLabel
             {
-                Text = { Text = valueLabel, FontSize = 9, Font = FontReg,
-                         Align = TextAnchor.MiddleLeft, Color = White },
+                Text = { Text = valueLabel, FontSize = 11, Font = FontReg,
+                         Align = TextAnchor.MiddleRight, Color = White },
                 RectTransform =
                 {
-                    AnchorMin = $"0.74 {yMin.ToString(CultureInfo.InvariantCulture)}",
-                    AnchorMax = $"0.99 {yMax.ToString(CultureInfo.InvariantCulture)}"
+                    AnchorMin = $"0.68 {yMin.ToString(CultureInfo.InvariantCulture)}",
+                    AnchorMax = $"0.97 {yMax.ToString(CultureInfo.InvariantCulture)}"
                 }
             }, parent);
         }
@@ -704,7 +762,7 @@ namespace Oxide.Plugins
             string card = c.Add(new CuiPanel
             {
                 Image = { Color = "0.07 0.04 0.04 0.88", Material = Blur },
-                RectTransform = { AnchorMin = "0.85 0.857", AnchorMax = "0.998 0.893" }
+                RectTransform = { AnchorMin = "0.84 0.832", AnchorMax = "0.998 0.872" }
             }, "Hud", RadName);
 
             c.Add(new CuiPanel

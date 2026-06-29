@@ -127,6 +127,8 @@ namespace Oxide.Plugins
         private const string BrandingPanel = "ProjectRift.Branding";
         private const string NightIndicatorPanel = "ProjectRift.Night";
         private const string EventAnnouncerPanel = "ProjectRift.EventAnnouncer";
+        // Opaque cover drawn over the native Rust health / hydration / food bars (bottom-left)
+        private const string NativeCoverPanel = "ProjectRift.NativeCover";
         
         private const string ColorBlurMat = "assets/content/ui/uibackgroundblur.mat";
         private const string ColorWhite = "1 1 1 1";
@@ -458,6 +460,7 @@ namespace Oxide.Plugins
             BuildBranding(player);
             BuildServerInfo(player);
             BuildVitalsContainer(player);
+            BuildNativeCover(player);  // hide default Rust vitals
             
             UpdateVitals(player);
             UpdateStatusStrip(player);
@@ -472,6 +475,7 @@ namespace Oxide.Plugins
             CuiHelper.DestroyUi(player, StatusStripPanel);
             CuiHelper.DestroyUi(player, NightIndicatorPanel);
             CuiHelper.DestroyUi(player, EventAnnouncerPanel);
+            CuiHelper.DestroyUi(player, NativeCoverPanel);
 
             // Clean up any remaining notifications
             var state = GetState(player);
@@ -480,6 +484,34 @@ namespace Oxide.Plugins
                 CuiHelper.DestroyUi(player, nid);
             }
             state.ActiveNotifications.Clear();
+        }
+
+        /// <summary>
+        /// Draws a fully opaque black panel over the area where the native Rust
+        /// health, hydration and food bars render (bottom-left of the screen).
+        /// This effectively hides the default Rust vitals and leaves only our
+        /// custom HUD visible.
+        /// </summary>
+        private void BuildNativeCover(BasePlayer player)
+        {
+            CuiHelper.DestroyUi(player, NativeCoverPanel);
+            var container = new CuiElementContainer();
+
+            // Solid black cover — coordinates tuned to the native Rust vitals cluster.
+            // The native bars sit in the bottom-left roughly within these bounds.
+            // Adjust AnchorMax X slightly wider (0.25) to catch all three bars.
+            container.Add(new CuiPanel
+            {
+                CursorEnabled = false,
+                RectTransform =
+                {
+                    AnchorMin = "0 0",
+                    AnchorMax = "0.25 0.115"
+                },
+                Image = { Color = "0 0 0 1" }   // fully opaque black
+            }, "Hud", NativeCoverPanel);
+
+            CuiHelper.AddUi(player, container);
         }
 
         private void BuildBranding(BasePlayer player)
