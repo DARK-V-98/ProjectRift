@@ -20,7 +20,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using Facepunch;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Oxide.Core;
@@ -28,7 +27,6 @@ using Oxide.Core.Libraries;
 using Oxide.Core.Plugins;
 using Oxide.Game.Rust.Cui;
 using UnityEngine;
-using Pool = Facepunch.Pool;
 using Time = UnityEngine.Time;
 
 namespace Oxide.Plugins
@@ -1549,20 +1547,26 @@ namespace Oxide.Plugins
                 grants = new List<IRewardGrant> { new TokenGrant(), new CosmeticGrant(), new TitleGrant() };
             }
 
+            // The NPC corpse entity is not created until just after OnEntityDeath,
+            // so defer the search a beat, then fill the nearest fresh corpse.
             public void FillCorpse(BaseCombatEntity npc, LootTable table)
             {
-                try
+                if (npc == null) return;
+                var pos = npc.transform.position;
+                ctx.After(0.4f, () =>
                 {
-                    var list = Pool.GetList<LootableCorpse>();
-                    Vis.Entities(npc.transform.position, 2.5f, list);
-                    LootableCorpse corpse = list.Count > 0 ? list[0] : null;
-                    Pool.FreeList(ref list);
-                    if (corpse?.containers == null || corpse.containers.Length == 0) return;
-                    var container = corpse.containers[0];
-                    container.Clear();
-                    RollInto(container, table);
-                }
-                catch (Exception ex) { ctx.Logger.Warn($"fill corpse: {ex.Message}"); }
+                    try
+                    {
+                        var list = new List<LootableCorpse>();
+                        Vis.Entities(pos, 3f, list);
+                        LootableCorpse corpse = list.Count > 0 ? list[0] : null;
+                        if (corpse?.containers == null || corpse.containers.Length == 0) return;
+                        var container = corpse.containers[0];
+                        container.Clear();
+                        RollInto(container, table);
+                    }
+                    catch (Exception ex) { ctx.Logger.Warn($"fill corpse: {ex.Message}"); }
+                });
             }
 
             private void RollInto(ItemContainer container, LootTable table)
