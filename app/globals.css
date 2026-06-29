@@ -2116,3 +2116,102 @@ a {
   * { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ============================================================
+   RIFT STORM — live event banner (fed by /api/rift)
+   ============================================================ */
+.rift-banner {
+  position: fixed;
+  top: 74px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  width: min(92vw, 720px);
+  pointer-events: none;
+  animation: rift-banner-in 0.45s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+}
+.rift-banner-inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(176, 38, 255, 0.45);
+  background: linear-gradient(
+    100deg,
+    rgba(24, 10, 46, 0.82),
+    rgba(12, 8, 28, 0.82)
+  );
+  box-shadow: var(--glow-violet), var(--shadow-card);
+  font-family: var(--font-ui);
+}
+.rift-banner-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  color: var(--violet);
+  text-shadow: 0 0 18px rgba(176, 38, 255, 0.6);
+  white-space: nowrap;
+}
+.rift-banner-loc {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--white);
+}
+.rift-banner-stat {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--cyan);
+  text-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+  white-space: nowrap;
+}
+.rift-banner-players {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.rift-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--violet);
+  box-shadow: 0 0 10px var(--violet);
+  animation: rift-pulse 1.4s ease-in-out infinite;
+}
+/* boss rage tint */
+.rift-banner.raged .rift-banner-inner {
+  border-color: rgba(255, 51, 102, 0.6);
+  box-shadow: 0 0 35px rgba(255, 51, 102, 0.5), var(--shadow-card);
+}
+.rift-banner.raged .rift-banner-tag {
+  color: #ff3366;
+  text-shadow: 0 0 18px rgba(255, 51, 102, 0.65);
+}
+.rift-banner.raged .rift-dot {
+  background: #ff3366;
+  box-shadow: 0 0 10px #ff3366;
+}
+@keyframes rift-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.35; transform: scale(0.7); }
+}
+@keyframes rift-banner-in {
+  from { opacity: 0; transform: translate(-50%, -16px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (max-width: 600px) {
+  .rift-banner { top: 66px; }
+  .rift-banner-inner { gap: 8px 12px; padding: 9px 14px; border-radius: 16px; }
+  .rift-banner-tag { font-size: 0.74rem; }
+  .rift-banner-loc { font-size: 0.86rem; }
+}

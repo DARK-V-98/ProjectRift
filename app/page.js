@@ -5,6 +5,7 @@ import BlastDoors from "@/components/BlastDoors";
 import Particles from "@/components/Particles";
 import { Icon } from "@/components/Icons";
 import CopyButton from "@/components/CopyButton";
+import RiftStormBanner from "@/components/RiftStormBanner";
 import { getServers } from "@/lib/data";
 import { SITE } from "@/lib/site";
 
@@ -25,6 +26,7 @@ export default async function Home() {
     <>
       <BlastDoors />
       <Navbar />
+      <RiftStormBanner />
       <Reveal />
 
       {/* ============ HERO ============ */}
