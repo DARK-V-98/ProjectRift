@@ -1,0 +1,20 @@
+{
+  "Detected": "⚡ <b>RIFT STORM DETECTED</b>\nAn unstable dimensional rift has appeared.\nLocation: <b>{location}</b>\nStarts in {seconds}s.",
+  "StormActive": "{prefix} The storm intensifies...",
+  "RiftOpen": "{prefix} The rift has torn open!",
+  "WaveStart": "{prefix} Wave {wave}/{total}: {name} x{count}",
+  "Objectives": "{prefix} Destroy the {count} Energy Crystals to collapse the portal!",
+  "CrystalDestroyed": "{prefix} A crystal shatters — stability {stability}%",
+  "BossSpawned": "{prefix} <color=#B026FF>{name}</color> has emerged!",
+  "BossRage": "{prefix} <color=#ff3366>THE OVERLORD ENTERS RAGE MODE!</color>",
+  "Victory": "{prefix} <color=#00E5FF>THE RIFT OVERLORD HAS FALLEN!</color> The portal collapses!",
+  "RewardTokens": "<color=#B026FF>+{amount} Project Rift Tokens</color>",
+  "NoPermission": "You do not have permission to use this command.",
+  "UsageAdmin": "Usage: /admin <startrift|stoprift|nextrift|riftstatus|debugrift>",
+  "Started": "Rift Storm started at {location}.",
+  "AlreadyRunning": "A Rift Storm is already running.",
+  "Stopped": "Rift Storm stopped.",
+  "Rescheduled": "Next Rift Storm rescheduled.",
+  "NoActive": "No active Rift Storm.",
+  "Status": "Phase: {phase} | Loc: {location} | Stability: {stability}% | Crystals: {crystals} | Wave: {wave} | Boss: {boss}% | Players: {players}"
+}
