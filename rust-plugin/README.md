@@ -3,16 +3,33 @@
 A standalone Rust plugin (separate from the website) that connects your Carbon
 server to the Project Rift website.
 
-It does **three** things:
+It does **four** things:
 
 1. **Live heartbeat** — every 30s it POSTs the real player count / max / hostname
    to `https://projectrift.esystemlk.com/api/server`, so the website and the
    `/loading` screen show live data.
 2. **Native loading screen** — sets the Rust loading-screen header image and the
    server's website URL.
-3. **In-game welcome overlay** — shows a CUI "loading/welcome" screen (logo,
-   tagline, live player count, a random tip, an ENTER button) when a player
-   connects, plus `/discord`, `/website` and `/loading` chat commands.
+3. **Modern in-game UI (glassmorphism)**:
+   - **HUD** — an always-on frosted-glass card (top-right) with the live online
+     count and the wipe countdown, auto-refreshing every minute.
+   - **Welcome screen** — a cinematic full-screen intro on connect (logo, title,
+     tagline, live count, rotating tip). It stays until the player clicks
+     **ENTER THE RIFT**, which plays a loading sequence with a **real spinning
+     logo** (pre-rendered rotation frames via ImageLibrary) + progress bar
+     before dropping them into the game. Without ImageLibrary it falls back to a
+     rotating loader ring.
+   - **/info panel** — a clean modal with status/team-limit/wipe stats, rules,
+     commands and the Discord link (click outside or CLOSE to dismiss).
+   - **Custom death screen** — on death: big "YOU DIED", the killer (or cause),
+     weapon, distance, headshot/body, time survived, a list of your **sleeping
+     bags + beds** (with per-bag cooldowns) to respawn at, and a RANDOM RESPAWN
+     button. Handles PvP, NPCs/animals, and environment deaths (fall, cold…).
+4. **Commands**: `/info` `/discord` `/website` `/loading`, plus admin `/rift`
+   (force a heartbeat + refresh all HUDs).
+
+The UI uses Rust's blur material (`uibackgroundblur.mat`) for a real frosted-glass
+look, with the Project Rift purple/cyan accent palette.
 
 ## ⚠️ Important reality check
 
@@ -88,6 +105,12 @@ Website  /loading  +  homepage live stats
 - `CuiRawImageComponent { Url = ... }` downloads the image on the client and may
   flicker on first load. For instant images, pre-cache with the **ImageLibrary**
   plugin and reference by name instead.
+- **Spinning logo (ENTER THE RIFT):** requires the **ImageLibrary** plugin. On
+  load this plugin queues 24 rotation frames (`/spin/frame0.png` … `frame23.png`,
+  shipped in the website's `public/spin/`) and cycles them for a real spinning
+  logo. If ImageLibrary isn't installed, it automatically falls back to a
+  rotating loader ring (no setup needed). Config: `Spinning logo frames base URL`
+  and `Spinning logo frame count`.
 - Tested target: **Carbon** (current Rust). Being Oxide-compatible it should also
   load on uMod/Oxide, but verify on your server before going live.
 ```
