@@ -1,0 +1,14 @@
+{
+  "HUD_Health": "HEALTH",
+  "HUD_Water": "WATER",
+  "HUD_Food": "FOOD",
+  "HUD_Temp": "TEMP",
+  "HUD_Rad": "RAD",
+  "HUD_Wet": "WET",
+  "HUD_Safe": "SAFE",
+  "HUD_Blocked": "BLOCKED",
+  "HUD_Players": "PLAYERS",
+  "HUD_Wipe": "WIPE IN",
+  "HUD_Ping": "PING",
+  "HUD_FPS": "FPS"
+}
