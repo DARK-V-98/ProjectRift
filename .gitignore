@@ -8,3 +8,9 @@ npm-debug.log*
 .DS_Store
 *.pem
 .vercel
+
+# RiftStorm compile-gate (non-redistributable game DLLs + build output)
+plugins/RiftStorm/build/refs/*.dll
+plugins/RiftStorm/build/obj/
+plugins/RiftStorm/build/bin/
+plugins/RiftStorm/dist/*.dll

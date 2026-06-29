@@ -1,0 +1,49 @@
+<!--
+  RiftStorm.csproj — real type-check / compile for the plugin.
+
+  This compiles ../dist/RiftStorm.cs against the Carbon + Rust + Unity reference
+  assemblies. Those DLLs are NOT redistributable, so they are NOT committed —
+  point this project at a folder that contains them (see build/README.md):
+
+    # default: build/refs/*.dll
+    dotnet build plugins/RiftStorm/build/RiftStorm.csproj
+
+    # or point at a Carbon/Rust install's Managed folder directly:
+    dotnet build plugins/RiftStorm/build/RiftStorm.csproj \
+      -p:RefsDir="/path/to/RustDedicated_Data/Managed"
+
+  Notes
+   * Rust runs on a Mono / .NET Framework 4.8 surface, so we target net48 and
+     reference the game's own DLLs by path (Private=false → don't copy them).
+   * EnableDefaultCompileItems=false so ONLY dist/RiftStorm.cs is compiled.
+   * If your Carbon build targets .NET 8, change TargetFramework to net8.0 and
+     point RefsDir at that Carbon install's managed assemblies.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>RiftStorm</AssemblyName>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+    <!-- Override with -p:RefsDir=... ; defaults to build/refs -->
+    <RefsDir Condition="'$(RefsDir)' == ''">$(MSBuildProjectDirectory)/refs</RefsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../dist/RiftStorm.cs" />
+  </ItemGroup>
+
+  <!-- Reference every DLL in RefsDir by full path (RAR resolves file-path refs). -->
+  <ItemGroup>
+    <Reference Include="$(RefsDir)/*.dll">
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>
