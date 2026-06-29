@@ -4,7 +4,7 @@ const nextConfig = {
   images: {
     qualities: [75, 95],
   },
-  serverExternalPackages: ['gamedig'],
+  serverExternalPackages: ['gamedig', 'firebase-admin'],
 };
 
 export default nextConfig;

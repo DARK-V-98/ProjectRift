@@ -11,8 +11,16 @@ It does **four** things:
 2. **Native loading screen** — sets the Rust loading-screen header image and the
    server's website URL.
 3. **Modern in-game UI (glassmorphism)**:
-   - **HUD** — an always-on frosted-glass card (top-right) with the live online
-     count and the wipe countdown, auto-refreshing every minute.
+   - **HUD** — an always-on frosted-glass card (top-right) showing the player's
+     **avatar (Steam, via ImageLibrary), name and playtime**, auto-refreshing.
+   - **Notification shower** — a top-center header that displays admin broadcasts
+     pushed from the website (`/admin` → polled from `/api/notifications`),
+     fading in and clearing automatically (info/success/warning/alert colors).
+   - **Radiation proximity warning** — caches monument radiation zones and shows
+     a live "RADIATION 42m" warning above the HUD that ticks down as a player
+     approaches, turning red on entry. Plays a **geiger-style beep** that speeds
+     up the closer they get, plus an alarm on entry. Configurable range, check
+     interval, beep on/off, and effect prefabs.
    - **Welcome screen** — a cinematic full-screen intro on connect (logo, title,
      tagline, live count, rotating tip). It stays until the player clicks
      **ENTER THE RIFT**, which plays a loading sequence with a **real spinning

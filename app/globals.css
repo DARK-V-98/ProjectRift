@@ -1023,6 +1023,60 @@ a {
   font-size: 0.76rem;
 }
 
+/* copy-to-clipboard button (IP, etc.) */
+.copy-btn {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.66rem;
+  color: var(--violet);
+  background: rgba(176, 38, 255, 0.12);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.copy-btn:hover {
+  background: rgba(176, 38, 255, 0.25);
+  color: var(--white);
+  border-color: var(--glass-border-hover);
+}
+
+/* connect bar (server IP + connect via steam) */
+.connect-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 16px 22px;
+  margin-bottom: 34px;
+}
+.connect-ip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.connect-ip-label {
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--muted-dim);
+}
+.connect-ip code {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+
 
 /* ============================================================
    FEATURES
@@ -1632,6 +1686,117 @@ a {
   .ls-stat { min-width: calc(50% - 5px); flex: 1 1 calc(50% - 5px); }
   .ls-wipe-unit b { font-size: 1.35rem; }
 }
+
+/* ============================================================
+   ADMIN — notification sender (/admin)
+   ============================================================ */
+.admin-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 40px 20px;
+}
+.admin-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 34px;
+}
+.admin-head h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.9rem;
+  margin: 10px 0 8px;
+}
+.admin-head .accent {
+  background: linear-gradient(120deg, var(--violet), var(--cyan));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.admin-head p {
+  color: var(--muted);
+  font-size: 0.92rem;
+  margin-bottom: 22px;
+}
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.admin-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.admin-form input,
+.admin-form textarea,
+.admin-form select {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  text-transform: none;
+  letter-spacing: normal;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.admin-form input:focus,
+.admin-form textarea:focus,
+.admin-form select:focus {
+  outline: none;
+  border-color: var(--glass-border-hover);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+}
+.admin-form textarea {
+  resize: vertical;
+}
+.admin-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.admin-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(5, 7, 13, 0.6);
+  border: 1px solid var(--glass-border);
+  border-left-width: 3px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.admin-preview b {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+}
+.admin-preview-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.admin-form .btn {
+  margin-top: 6px;
+  justify-content: center;
+}
+.admin-status {
+  text-align: center;
+  font-size: 0.86rem;
+  padding: 10px;
+  border-radius: 10px;
+}
+.admin-status.ok { color: #2bff88; background: rgba(43, 255, 136, 0.1); }
+.admin-status.err { color: #ff5470; background: rgba(255, 84, 112, 0.1); }
 
 /* ============================================================
    REVEAL ANIMATION

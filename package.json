@@ -11,7 +11,9 @@
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
     "firebase": "^11.1.0",
+    "firebase-admin": "^14.1.0",
     "gamedig": "^5.3.3",
     "next": "^15.5.19",
     "react": "^19.0.0",

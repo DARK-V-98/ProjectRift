@@ -4,7 +4,9 @@ import Reveal from "@/components/Reveal";
 import BlastDoors from "@/components/BlastDoors";
 import Particles from "@/components/Particles";
 import { Icon } from "@/components/Icons";
+import CopyButton from "@/components/CopyButton";
 import { getServers } from "@/lib/data";
+import { SITE } from "@/lib/site";
 
 export const revalidate = 60; // refresh server/player data every minute
 
@@ -59,8 +61,8 @@ export default async function Home() {
             <span className="dot" /> Season 04 · Now Live
           </span>
           <div className="hero-cta-row">
-            <a className="btn btn-primary" href="#servers">
-              Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+            <a className="btn btn-primary" href={SITE.connectUrl}>
+              Connect via Steam <Icon.arrow style={{ width: 18, height: 18 }} />
             </a>
             <a className="btn btn-ghost" href="#servers">
               View Servers
@@ -74,8 +76,8 @@ export default async function Home() {
             <span className="dot" /> Season 04 · Now Live
           </span>
           <div className="hero-cta-row">
-            <a className="btn btn-primary" href="#servers">
-              Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+            <a className="btn btn-primary" href={SITE.connectUrl}>
+              Connect via Steam <Icon.arrow style={{ width: 18, height: 18 }} />
             </a>
             <a className="btn btn-ghost" href="#servers">
               View Servers
@@ -200,10 +202,14 @@ export default async function Home() {
                   )}
 
                   {/* Connection info */}
-                  <div className="rust-connect">
-                    <Icon.players style={{ width: 13, height: 13 }} />
-                    <span>connect <code>play.projectrift.gg</code></span>
-                  </div>
+                  {live && (
+                    <div className="rust-connect">
+                      <Icon.server style={{ width: 13, height: 13 }} />
+                      <span>SERVER IP</span>
+                      <code>{SITE.serverIp}</code>
+                      <CopyButton text={SITE.serverIp} />
+                    </div>
+                  )}
                 </div>
               </article>
             );
@@ -262,7 +268,7 @@ export default async function Home() {
             </p>
             <a
               className="btn btn-discord"
-              href="https://discord.gg"
+              href={SITE.discordUrl}
               target="_blank"
               rel="noreferrer"
             >
@@ -386,12 +392,12 @@ export default async function Home() {
               className="cta-banner-img"
             />
             <div className="cta-banner-actions">
-              <a className="btn btn-primary" href="#servers">
-                Join Server <Icon.arrow style={{ width: 18, height: 18 }} />
+              <a className="btn btn-primary" href={SITE.connectUrl}>
+                Connect via Steam <Icon.arrow style={{ width: 18, height: 18 }} />
               </a>
               <a
                 className="btn btn-discord"
-                href="https://discord.gg"
+                href={SITE.discordUrl}
                 target="_blank"
                 rel="noreferrer"
               >
@@ -425,7 +431,7 @@ export default async function Home() {
                 raid and dominate across premium survival and roleplay worlds.
               </p>
               <div className="socials">
-                <a href="#" aria-label="Discord"><Icon.discord style={{ width: 18, height: 18 }} /></a>
+                <a href={SITE.discordUrl} target="_blank" rel="noreferrer" aria-label="Discord"><Icon.discord style={{ width: 18, height: 18 }} /></a>
                 <a href="#" aria-label="X"><Icon.x style={{ width: 16, height: 16 }} /></a>
                 <a href="#" aria-label="YouTube"><Icon.youtube style={{ width: 20, height: 20 }} /></a>
                 <a href="#" aria-label="Twitch"><Icon.twitch style={{ width: 18, height: 18 }} /></a>

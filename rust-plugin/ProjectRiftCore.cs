@@ -17,6 +17,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Oxide.Core;
 using Oxide.Core.Libraries;
 using Oxide.Core.Plugins;
 using Oxide.Game.Rust.Cui;
@@ -25,8 +27,8 @@ using Time = UnityEngine.Time;
 
 namespace Oxide.Plugins
 {
-    [Info("ProjectRiftCore", "ESYSTEMLK", "1.4.0")]
-    [Description("Live heartbeat + modern in-game UI (HUD, welcome, info, death screen) for Project Rift.")]
+    [Info("ProjectRiftCore", "ESYSTEMLK", "1.7.0")]
+    [Description("Live heartbeat + modern in-game UI (HUD, radiation warning, notifications, welcome, info, death screen) for Project Rift.")]
     public class ProjectRiftCore : RustPlugin
     {
         [PluginReference] private Plugin ImageLibrary;
@@ -54,8 +56,8 @@ namespace Oxide.Plugins
             [JsonProperty("Welcome screen background image URL")]
             public string WelcomeImageUrl = "https://projectrift.esystemlk.com/bgmobile.png";
 
-            [JsonProperty("Welcome screen logo image URL (square)")]
-            public string LogoUrl = "https://projectrift.esystemlk.com/serverlogo.png";
+            [JsonProperty("Welcome screen logo image URL (use the ROUND logo)")]
+            public string LogoUrl = "https://projectrift.esystemlk.com/icons/icon-512.png";
 
             [JsonProperty("Next wipe date (UTC ISO 8601, blank = auto next Thursday 18:00 UTC)")]
             public string WipeDateUtc = "";
@@ -63,11 +65,35 @@ namespace Oxide.Plugins
             [JsonProperty("Heartbeat interval (seconds)")]
             public float HeartbeatInterval = 30f;
 
+            [JsonProperty("Notifications API URL (polled for admin broadcasts)")]
+            public string NotificationsApiUrl = "https://projectrift.esystemlk.com/api/notifications";
+
+            [JsonProperty("Notification poll interval (seconds)")]
+            public float NotificationPollSeconds = 5f;
+
             [JsonProperty("Show always-on HUD")]
             public bool HudEnabled = true;
 
             [JsonProperty("Show custom death screen")]
             public bool DeathScreenEnabled = true;
+
+            [JsonProperty("Warn players approaching radiation zones")]
+            public bool RadiationWarnEnabled = true;
+
+            [JsonProperty("Radiation warning range (metres)")]
+            public float RadiationWarnRange = 60f;
+
+            [JsonProperty("Radiation check interval (seconds)")]
+            public float RadiationCheckSeconds = 1f;
+
+            [JsonProperty("Play a beep when approaching radiation")]
+            public bool RadiationBeepEnabled = true;
+
+            [JsonProperty("Radiation approach beep effect prefab")]
+            public string RadiationBeepPrefab = "assets/bundled/prefabs/fx/notice/item.select.fx.prefab";
+
+            [JsonProperty("Radiation enter alarm effect prefab")]
+            public string RadiationEnterPrefab = "assets/prefabs/locks/keypad/effects/lock.code.denied.prefab";
 
             [JsonProperty("Show welcome screen on connect")]
             public bool ShowWelcomeScreen = true;
@@ -128,9 +154,26 @@ namespace Oxide.Plugins
         private const string InfoName = "ProjectRift.Info";
         private const string DeathName = "ProjectRift.Death";
         private const string EnterName = "ProjectRift.Enter";
+        private const string NotifyName = "ProjectRift.Notify";
+        private const string RadName = "ProjectRift.Rad";
+
+        // cached radiation trigger colliders + per-player last shown warning
+        private readonly List<Collider> radZones = new List<Collider>();
+        private readonly Dictionary<ulong, string> lastRadText = new Dictionary<ulong, string>();
+        private readonly Dictionary<ulong, float> radNextBeep = new Dictionary<ulong, float>();
+        private readonly HashSet<ulong> radInside = new HashSet<ulong>();
 
         // tracks when each player's current life began (for "time survived")
         private readonly Dictionary<ulong, float> aliveSince = new Dictionary<ulong, float>();
+
+        // playtime: persisted total seconds (by SteamID string) + current session start
+        private Dictionary<string, double> playtime = new Dictionary<string, double>();
+        private readonly Dictionary<ulong, float> sessionStart = new Dictionary<ulong, float>();
+
+        // notification polling state
+        private long lastNotifId = 0;
+        private bool notifPrimed = false;
+        private int notifSeq = 0;
 
         // glassmorphism palette (Rust CUI uses "r g b a", 0-1)
         private const string Glass = "0.06 0.05 0.10 0.82";   // frosted panel
@@ -157,28 +200,78 @@ namespace Oxide.Plugins
                 ConVar.Server.url = config.WebsiteUrl;
 
             RegisterSpinFrames();
+            LoadPlaytime();
 
             SendHeartbeat();
             timer.Every(config.HeartbeatInterval, SendHeartbeat);
 
-            // Refresh the HUD (live count + countdown) every minute.
+            // Poll the website for admin notifications.
+            timer.Every(Mathf.Max(2f, config.NotificationPollSeconds), PollNotifications);
+
+            // Radiation proximity warnings (cache zones after the world is loaded).
+            if (config.RadiationWarnEnabled)
+            {
+                timer.Once(12f, CacheRadiationZones);
+                timer.Every(Mathf.Max(0.5f, config.RadiationCheckSeconds), RadiationTick);
+            }
+
+            // Refresh the HUD (name + playtime) every minute.
             timer.Every(60f, RefreshHudAll);
 
-            // (re)draw HUD for everyone already online (e.g. on hot-reload).
-            foreach (var p in BasePlayer.activePlayerList) BuildHud(p);
+            // (re)draw HUD + start session timers for everyone already online.
+            foreach (var p in BasePlayer.activePlayerList)
+            {
+                if (!sessionStart.ContainsKey(p.userID)) sessionStart[p.userID] = Time.realtimeSinceStartup;
+                BuildHud(p);
+            }
         }
+
+        #region Playtime persistence
+        private void LoadPlaytime()
+        {
+            try { playtime = Interface.Oxide.DataFileSystem.ReadObject<Dictionary<string, double>>("ProjectRiftCore_Playtime") ?? new Dictionary<string, double>(); }
+            catch { playtime = new Dictionary<string, double>(); }
+        }
+
+        private void SavePlaytime() => Interface.Oxide.DataFileSystem.WriteObject("ProjectRiftCore_Playtime", playtime);
+
+        private void CommitSession(BasePlayer player)
+        {
+            if (player == null || !sessionStart.TryGetValue(player.userID, out var st)) return;
+            double add = Time.realtimeSinceStartup - st;
+            playtime.TryGetValue(player.UserIDString, out var cur);
+            playtime[player.UserIDString] = cur + add;
+            sessionStart.Remove(player.userID);
+        }
+
+        private string PlaytimeText(BasePlayer player)
+        {
+            playtime.TryGetValue(player.UserIDString, out var total);
+            if (sessionStart.TryGetValue(player.userID, out var st))
+                total += Time.realtimeSinceStartup - st;
+            int s = (int)total, h = s / 3600, m = (s % 3600) / 60;
+            return h > 0 ? $"{h}h {m}m" : $"{m}m";
+        }
+        #endregion
 
         private void Unload()
         {
             foreach (var p in BasePlayer.activePlayerList)
             {
+                CommitSession(p);
                 CuiHelper.DestroyUi(p, HudName);
                 CuiHelper.DestroyUi(p, WelcomeName);
                 CuiHelper.DestroyUi(p, EnterName);
                 CuiHelper.DestroyUi(p, InfoName);
                 CuiHelper.DestroyUi(p, DeathName);
+                CuiHelper.DestroyUi(p, NotifyName);
+                CuiHelper.DestroyUi(p, RadName);
             }
+            SavePlaytime();
             deathSessions.Clear();
+            lastRadText.Clear();
+            radNextBeep.Clear();
+            radInside.Clear();
         }
         #endregion
 
@@ -254,45 +347,325 @@ namespace Oxide.Plugins
             string card = c.Add(new CuiPanel
             {
                 Image = { Color = Glass, Material = Blur },
-                RectTransform = { AnchorMin = "0.838 0.9", AnchorMax = "0.995 0.988" }
+                RectTransform = { AnchorMin = "0.82 0.83", AnchorMax = "0.998 0.99" }
             }, "Hud", HudName);
 
             // left accent bar
             c.Add(new CuiPanel
             {
                 Image = { Color = Purple },
-                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.014 1" }
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.01 1" }
             }, card);
 
-            // thin top hairline
+            // ---- brand: round logo (no game-name text) ----
+            string logoPng = ImageLibrary?.Call("GetImage", "rift_logo", 0UL) as string;
+            var logoImg = new CuiRawImageComponent();
+            if (!string.IsNullOrEmpty(logoPng)) logoImg.Png = logoPng;
+            else logoImg.Url = config.LogoUrl;
+            c.Add(new CuiElement
+            {
+                Parent = card,
+                Components =
+                {
+                    logoImg,
+                    new CuiRectTransformComponent { AnchorMin = "0.05 0.92", AnchorMax = "0.05 0.92", OffsetMin = "2 -16", OffsetMax = "34 16" }
+                }
+            });
+            // hairline under the brand
             c.Add(new CuiPanel
             {
                 Image = { Color = Line },
-                RectTransform = { AnchorMin = "0.014 0.985", AnchorMax = "1 1" }
+                RectTransform = { AnchorMin = "0.05 0.83", AnchorMax = "0.95 0.835" }
             }, card);
 
-            // brand
+            // ---- player avatar ----
+            string avatar = ImageLibrary?.Call("GetImage", player.UserIDString, 0UL) as string;
+            if (!string.IsNullOrEmpty(avatar))
+            {
+                c.Add(new CuiElement
+                {
+                    Parent = card,
+                    Components =
+                    {
+                        new CuiRawImageComponent { Png = avatar },
+                        new CuiRectTransformComponent { AnchorMin = "0.05 0.66", AnchorMax = "0.05 0.66", OffsetMin = "2 -22", OffsetMax = "46 22" }
+                    }
+                });
+            }
+            else
+            {
+                string badge = c.Add(new CuiPanel
+                {
+                    Image = { Color = "0.69 0.149 1 1" },
+                    RectTransform = { AnchorMin = "0.05 0.66", AnchorMax = "0.05 0.66", OffsetMin = "2 -22", OffsetMax = "46 22" }
+                }, card);
+                c.Add(new CuiLabel
+                {
+                    Text = { Text = (string.IsNullOrEmpty(player.displayName) ? "?" : player.displayName.Substring(0, 1).ToUpper()), FontSize = 20, Font = FontBold, Align = TextAnchor.MiddleCenter, Color = White },
+                    RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" }
+                }, badge);
+            }
+
+            // player name
+            string name = player.displayName ?? "Survivor";
+            if (name.Length > 15) name = name.Substring(0, 15) + "…";
             c.Add(new CuiLabel
             {
-                Text = { Text = "PROJECT <color=#00e5ff>RIFT</color>", FontSize = 14, Font = FontBold, Align = TextAnchor.MiddleLeft, Color = White },
-                RectTransform = { AnchorMin = "0.07 0.58", AnchorMax = "0.98 0.96" }
+                Text = { Text = name, FontSize = 14, Font = FontBold, Align = TextAnchor.LowerLeft, Color = White },
+                RectTransform = { AnchorMin = "0.31 0.66", AnchorMax = "0.97 0.79" }
             }, card);
 
-            // online
+            // playtime
+            c.Add(new CuiLabel
+            {
+                Text = { Text = $"<color=#9aa3c4>PLAYTIME</color>  <color=#00e5ff>{PlaytimeText(player)}</color>", FontSize = 11, Font = FontReg, Align = TextAnchor.UpperLeft, Color = Muted },
+                RectTransform = { AnchorMin = "0.31 0.53", AnchorMax = "0.97 0.66" }
+            }, card);
+
+            // online count
             c.Add(new CuiLabel
             {
                 Text = { Text = $"<color=#2bff88>●</color>  {players}<color=#9aa3c4>/{max}</color>  ONLINE", FontSize = 12, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = "0.82 0.85 0.94 1" },
-                RectTransform = { AnchorMin = "0.07 0.31", AnchorMax = "0.98 0.58" }
+                RectTransform = { AnchorMin = "0.06 0.28", AnchorMax = "0.97 0.46" }
             }, card);
 
             // wipe countdown
             c.Add(new CuiLabel
             {
                 Text = { Text = $"<color=#9aa3c4>NEXT WIPE</color>  <color=#b026ff>{WipeText()}</color>", FontSize = 11, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = Muted },
-                RectTransform = { AnchorMin = "0.07 0.04", AnchorMax = "0.98 0.31" }
+                RectTransform = { AnchorMin = "0.06 0.08", AnchorMax = "0.97 0.26" }
             }, card);
 
             CuiHelper.AddUi(player, c);
+        }
+        #endregion
+
+        #region Notifications (header shower)
+        private void PollNotifications()
+        {
+            if (string.IsNullOrEmpty(config.NotificationsApiUrl)) return;
+
+            webrequest.Enqueue($"{config.NotificationsApiUrl}?since={lastNotifId}", null, (code, response) =>
+            {
+                if (code != 200 || string.IsNullOrEmpty(response)) return;
+                try
+                {
+                    var json = JObject.Parse(response);
+                    long latest = json["latestId"]?.Value<long>() ?? lastNotifId;
+
+                    // first successful poll just primes the cursor (no backlog spam)
+                    if (!notifPrimed)
+                    {
+                        lastNotifId = latest;
+                        notifPrimed = true;
+                        return;
+                    }
+
+                    var arr = json["notifications"] as JArray;
+                    if (arr == null) return;
+                    foreach (var n in arr)
+                    {
+                        long id = n["id"]?.Value<long>() ?? 0;
+                        if (id <= lastNotifId) continue;
+                        lastNotifId = Math.Max(lastNotifId, id);
+                        ShowNotificationAll(
+                            n["title"]?.Value<string>() ?? "",
+                            n["message"]?.Value<string>() ?? "",
+                            n["type"]?.Value<string>() ?? "info",
+                            n["durationSec"]?.Value<float>() ?? 6f);
+                    }
+                }
+                catch (Exception e) { PrintWarning("Notification parse failed: " + e.Message); }
+            }, this, RequestMethod.GET, null, 8f);
+        }
+
+        private void ShowNotificationAll(string title, string message, string type, float duration)
+        {
+            if (string.IsNullOrEmpty(message)) return;
+            int myId = ++notifSeq;
+            foreach (var p in BasePlayer.activePlayerList) BuildNotif(p, title, message, type);
+
+            timer.Once(Mathf.Clamp(duration, 2f, 30f), () =>
+            {
+                if (notifSeq != myId) return; // a newer notification replaced it
+                foreach (var p in BasePlayer.activePlayerList) CuiHelper.DestroyUi(p, NotifyName);
+            });
+        }
+
+        private void BuildNotif(BasePlayer player, string title, string message, string type)
+        {
+            if (player == null) return;
+            CuiHelper.DestroyUi(player, NotifyName);
+
+            string accent =
+                type == "success" ? "0.17 1 0.53 1" :
+                type == "warning" ? "1 0.69 0.13 1" :
+                type == "alert" ? "1 0.25 0.38 1" : "0 0.898 1 1";
+            string head = string.IsNullOrEmpty(title) ? "PROJECT RIFT" : title.ToUpper();
+
+            var c = new CuiElementContainer();
+            string root = c.Add(new CuiPanel
+            {
+                Image = { Color = "0.05 0.05 0.09 0.9", Material = Blur, FadeIn = 0.35f },
+                RectTransform = { AnchorMin = "0.34 0.925", AnchorMax = "0.66 0.967" }
+            }, "Hud", NotifyName);
+
+            c.Add(new CuiPanel
+            {
+                Image = { Color = accent, FadeIn = 0.35f },
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.012 1" }
+            }, root);
+
+            c.Add(new CuiLabel
+            {
+                Text = { Text = head, FontSize = 10, Font = FontBold, Align = TextAnchor.UpperLeft, Color = accent, FadeIn = 0.35f },
+                RectTransform = { AnchorMin = "0.04 0.5", AnchorMax = "0.98 0.94" }
+            }, root);
+
+            c.Add(new CuiLabel
+            {
+                Text = { Text = message, FontSize = 13, Font = FontReg, Align = TextAnchor.LowerLeft, Color = White, FadeIn = 0.35f },
+                RectTransform = { AnchorMin = "0.04 0.08", AnchorMax = "0.98 0.55" }
+            }, root);
+
+            CuiHelper.AddUi(player, c);
+        }
+        #endregion
+
+        #region Radiation proximity warning
+        private void CacheRadiationZones()
+        {
+            radZones.Clear();
+            foreach (var tr in UnityEngine.Object.FindObjectsOfType<TriggerRadiation>())
+            {
+                if (tr == null) continue;
+                var col = tr.GetComponent<Collider>() ?? tr.GetComponentInChildren<Collider>();
+                if (col != null) radZones.Add(col);
+            }
+            Puts($"Cached {radZones.Count} radiation zones.");
+        }
+
+        private void RadiationTick()
+        {
+            if (radZones.Count == 0) return;
+            float range = config.RadiationWarnRange;
+            float reject = (range + 250f) * (range + 250f);
+
+            foreach (var p in BasePlayer.activePlayerList)
+            {
+                if (p == null || !p.IsConnected || p.IsSleeping() || p.IsDead())
+                {
+                    ClearRad(p);
+                    continue;
+                }
+
+                Vector3 pos = p.transform.position;
+                float best = float.MaxValue;
+                for (int i = 0; i < radZones.Count; i++)
+                {
+                    var col = radZones[i];
+                    if (col == null) continue;
+                    if ((col.bounds.center - pos).sqrMagnitude > reject) continue;
+                    Vector3 cp;
+                    try { cp = col.ClosestPoint(pos); } catch { continue; }
+                    float d = Vector3.Distance(pos, cp);
+                    if (d < best) best = d;
+                }
+
+                if (best <= range)
+                {
+                    ShowRad(p, best);
+                    if (config.RadiationBeepEnabled) HandleRadSound(p, best);
+                }
+                else
+                {
+                    ClearRad(p);
+                    radNextBeep.Remove(p.userID);
+                    radInside.Remove(p.userID);
+                }
+            }
+        }
+
+        private void HandleRadSound(BasePlayer player, float dist)
+        {
+            // Inside the zone: alarm once on entry, then let Rust's own geiger sound take over.
+            if (dist <= 1f)
+            {
+                if (radInside.Add(player.userID))
+                    RunEffect(player, config.RadiationEnterPrefab);
+                return;
+            }
+            radInside.Remove(player.userID);
+
+            // Approaching: beep, faster the closer they get (geiger-style).
+            float now = Time.realtimeSinceStartup;
+            if (radNextBeep.TryGetValue(player.userID, out var next) && now < next) return;
+            float cadence = dist < 10f ? 0.5f : dist < 25f ? 1f : dist < 45f ? 2f : 3f;
+            radNextBeep[player.userID] = now + cadence;
+            RunEffect(player, config.RadiationBeepPrefab);
+        }
+
+        private void RunEffect(BasePlayer player, string prefab)
+        {
+            if (string.IsNullOrEmpty(prefab) || player == null || player.net == null) return;
+            var effect = new Effect(prefab, player, 0, Vector3.zero, Vector3.forward);
+            EffectNetwork.Send(effect, player.net.connection);
+        }
+
+        private void ShowRad(BasePlayer player, float dist)
+        {
+            string text, dot;
+            if (dist <= 1f)
+            {
+                text = "IN RADIATION ZONE";
+                dot = "1 0.25 0.25 1";
+            }
+            else
+            {
+                text = $"RADIATION  {Mathf.CeilToInt(dist)}m";
+                dot = dist < 20f ? "1 0.32 0.2 1" : "1 0.7 0.15 1";
+            }
+
+            if (lastRadText.TryGetValue(player.userID, out var prev) && prev == text) return;
+            lastRadText[player.userID] = text;
+
+            CuiHelper.DestroyUi(player, RadName);
+            var c = new CuiElementContainer();
+            string card = c.Add(new CuiPanel
+            {
+                Image = { Color = "0.07 0.04 0.04 0.88", Material = Blur },
+                RectTransform = { AnchorMin = "0.82 0.785", AnchorMax = "0.998 0.823" }
+            }, "Hud", RadName);
+
+            c.Add(new CuiPanel
+            {
+                Image = { Color = dot },
+                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.012 1" }
+            }, card);
+
+            c.Add(new CuiLabel
+            {
+                Text = { Text = $"<color={Rich(dot)}>●</color>  {text}", FontSize = 12, Font = FontBold, Align = TextAnchor.MiddleLeft, Color = "0.96 0.9 0.9 1" },
+                RectTransform = { AnchorMin = "0.06 0", AnchorMax = "0.98 1" }
+            }, card);
+
+            CuiHelper.AddUi(player, c);
+        }
+
+        private void ClearRad(BasePlayer player)
+        {
+            if (player != null && lastRadText.Remove(player.userID))
+                CuiHelper.DestroyUi(player, RadName);
+        }
+
+        // convert "r g b a" (0-1) to a #rrggbb hex for rich-text color tags
+        private string Rich(string rgba)
+        {
+            var parts = rgba.Split(' ');
+            int r = Mathf.RoundToInt(float.Parse(parts[0], CultureInfo.InvariantCulture) * 255);
+            int g = Mathf.RoundToInt(float.Parse(parts[1], CultureInfo.InvariantCulture) * 255);
+            int b = Mathf.RoundToInt(float.Parse(parts[2], CultureInfo.InvariantCulture) * 255);
+            return $"#{r:X2}{g:X2}{b:X2}";
         }
         #endregion
 
@@ -300,6 +673,7 @@ namespace Oxide.Plugins
         private void OnPlayerConnected(BasePlayer player)
         {
             if (player == null) return;
+            sessionStart[player.userID] = Time.realtimeSinceStartup;
             timer.Once(2f, () =>
             {
                 if (player == null || !player.IsConnected) return;
@@ -313,6 +687,9 @@ namespace Oxide.Plugins
             if (player == null) return;
             if (!aliveSince.ContainsKey(player.userID))
                 aliveSince[player.userID] = Time.realtimeSinceStartup;
+            // safety net: a sleeping/awake player is alive — clear any death UI
+            if (deathSessions.Remove(player.userID))
+                CuiHelper.DestroyUi(player, DeathName);
             BuildHud(player);
         }
 
@@ -426,10 +803,15 @@ namespace Oxide.Plugins
 
         private void RegisterSpinFrames()
         {
-            if (ImageLibrary == null || config.SpinFrameCount <= 0 || string.IsNullOrEmpty(config.SpinFrameBaseUrl)) return;
+            if (ImageLibrary == null) return;
+            // cache the round logo for the HUD (avoids per-rebuild flicker)
+            if (!string.IsNullOrEmpty(config.LogoUrl))
+                ImageLibrary.Call("AddImage", config.LogoUrl, "rift_logo", 0UL);
+
+            if (config.SpinFrameCount <= 0 || string.IsNullOrEmpty(config.SpinFrameBaseUrl)) return;
             for (int i = 0; i < config.SpinFrameCount; i++)
                 ImageLibrary.Call("AddImage", $"{config.SpinFrameBaseUrl}{i}.png", $"rift_spin_{i}", 0UL);
-            Puts($"Queued {config.SpinFrameCount} spinning-logo frames with ImageLibrary.");
+            Puts($"Queued logo + {config.SpinFrameCount} spinning-logo frames with ImageLibrary.");
         }
 
         private bool HasSpinFrames()
@@ -638,8 +1020,13 @@ namespace Oxide.Plugins
         private void OnPlayerDisconnected(BasePlayer player, string reason)
         {
             if (player == null) return;
+            CommitSession(player);
+            SavePlaytime();
             aliveSince.Remove(player.userID);
             deathSessions.Remove(player.userID);
+            lastRadText.Remove(player.userID);
+            radNextBeep.Remove(player.userID);
+            radInside.Remove(player.userID);
         }
 
         private string WeaponName(HitInfo info)
@@ -798,13 +1185,20 @@ namespace Oxide.Plugins
 
         private void RefreshBags(BasePlayer victim)
         {
-            if (victim == null || !deathSessions.TryGetValue(victim.userID, out var session)) return;
+            if (victim == null) return;
 
-            // stop + clean up once the player is alive again
-            if (!victim.IsConnected || !victim.IsDead())
+            // The death screen lives as long as the death SESSION exists.
+            // (Don't use IsDead() here — at OnPlayerDeath time the lifestate
+            // hasn't flipped yet, which would destroy the screen instantly.)
+            // The session is cleared by OnPlayerRespawned / OnPlayerDisconnected.
+            if (!deathSessions.TryGetValue(victim.userID, out var session))
+            {
+                CuiHelper.DestroyUi(victim, DeathName);
+                return;
+            }
+            if (!victim.IsConnected)
             {
                 deathSessions.Remove(victim.userID);
-                CuiHelper.DestroyUi(victim, DeathName);
                 return;
             }
 

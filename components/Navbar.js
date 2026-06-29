@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Icon } from "./Icons";
+import { SITE } from "@/lib/site";
 
 const links = [
   ["Home", "#home"],
@@ -51,7 +52,7 @@ export default function Navbar() {
         <div className="nav-right">
           <a
             className="btn btn-discord"
-            href="https://discord.gg"
+            href={SITE.discordUrl}
             target="_blank"
             rel="noreferrer"
           >
