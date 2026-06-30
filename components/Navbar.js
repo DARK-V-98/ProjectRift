@@ -1,21 +1,24 @@
 "use client";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Icon } from "./Icons";
 import { SITE } from "@/lib/site";
+import { useAuth } from "@/lib/useAuth";
 
 const links = [
-  ["Home", "#home"],
-  ["Servers", "#servers"],
-  ["Whitelist", "#whitelist"],
-  ["Reports", "#reports"],
-  ["About", "#about"],
-  ["Team", "#team"],
+  ["Home", "/#home"],
+  ["Servers", "/#servers"],
+  ["Whitelist", "/dashboard/whitelist"],
+  ["Reports", "/#reports"],
+  ["About", "/#about"],
+  ["Team", "/#team"],
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -50,6 +53,9 @@ export default function Navbar() {
         </ul>
 
         <div className="nav-right">
+          <Link className="btn btn-ghost nav-auth" href={user ? "/dashboard" : "/login"}>
+            {user ? "Dashboard" : "Sign In"}
+          </Link>
           <a
             className="btn btn-discord"
             href={SITE.discordUrl}
@@ -96,6 +102,19 @@ export default function Navbar() {
               {label}
             </a>
           ))}
+          <Link
+            href={user ? "/dashboard" : "/login"}
+            onClick={() => setOpen(false)}
+            style={{
+              padding: "12px 14px",
+              fontFamily: "var(--font-ui)",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              color: "var(--cyan, #00e5ff)",
+            }}
+          >
+            {user ? "Dashboard" : "Sign In"}
+          </Link>
         </div>
       )}
     </nav>

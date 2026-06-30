@@ -69,6 +69,26 @@ export const Icon = {
       <path d="M5 20a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="1.6" />
     </svg>
   ),
+  user: (p) => (
+    <svg viewBox="0 0 24 24" fill="none" {...p}>
+      <circle cx="12" cy="8" r="3.4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M5.5 20a6.5 6.5 0 0 1 13 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  ),
+  video: (p) => (
+    <svg viewBox="0 0 24 24" fill="none" {...p}>
+      <rect x="3" y="6" width="13" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.6" />
+      <path d="m16 10 5-3v10l-5-3v-4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  ),
+  gamepad: (p) => (
+    <svg viewBox="0 0 24 24" fill="none" {...p}>
+      <path d="M7 9h10a5 5 0 0 1 5 5 3 3 0 0 1-5.4 1.8L15 14H9l-1.6 1.8A3 3 0 0 1 2 14a5 5 0 0 1 5-5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+      <path d="M6 11.5v2.5M4.8 12.7h2.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <circle cx="16.5" cy="12" r="1" fill="currentColor" />
+      <circle cx="18.5" cy="14" r="1" fill="currentColor" />
+    </svg>
+  ),
   arrow: (p) => (
     <svg viewBox="0 0 24 24" fill="none" {...p}>
       <path d="M5 12h14m-6-6 6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />

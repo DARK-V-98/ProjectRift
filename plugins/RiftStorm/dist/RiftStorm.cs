@@ -68,6 +68,7 @@ namespace Oxide.Plugins
             {
                 CuiHelper.DestroyUi(pl, UiManager.HudRoot);
                 CuiHelper.DestroyUi(pl, UiManager.BossRoot);
+                CuiHelper.DestroyUi(pl, WeatherController.FilterName);
             }
         }
 
@@ -193,7 +194,10 @@ namespace Oxide.Plugins
 
         private void OnPlayerConnected(BasePlayer player)
         {
-            if (events != null && events.IsRunning) ctx.Ui.ForceRedraw();
+            if (events == null || !events.IsRunning) return;
+            ctx.Ui.ForceRedraw();
+            if (ctx.Weather.IsActive)
+                timer.Once(4f, () => { if (player != null && player.IsConnected) ctx.Weather.ShowFilter(player); });
         }
 
         private void OnPlayerDisconnected(BasePlayer player, string reason)
@@ -201,6 +205,7 @@ namespace Oxide.Plugins
             if (player == null) return;
             CuiHelper.DestroyUi(player, UiManager.HudRoot);
             CuiHelper.DestroyUi(player, UiManager.BossRoot);
+            CuiHelper.DestroyUi(player, WeatherController.FilterName);
         }
 
         #endregion
@@ -308,10 +313,10 @@ namespace Oxide.Plugins
         public class WeatherConfig
         {
             [JsonProperty("Override weather")] public bool Enabled = true;
-            [JsonProperty("Rain (0-1)")] public float Rain = 0.9f;
-            [JsonProperty("Fog (0-1)")] public float Fog = 0.7f;
-            [JsonProperty("Clouds (0-1)")] public float Clouds = 0.95f;
-            [JsonProperty("Wind (0-1)")] public float Wind = 0.8f;
+            [JsonProperty("Rain (0-1)")] public float Rain = 1f;
+            [JsonProperty("Fog (0-1)")] public float Fog = 1f;
+            [JsonProperty("Clouds (0-1)")] public float Clouds = 1f;
+            [JsonProperty("Wind (0-1)")] public float Wind = 0.9f;
             [JsonProperty("Thunder enabled")] public bool Thunder = true;
             [JsonProperty("Thunder interval min (s)")] public float ThunderMin = 6f;
             [JsonProperty("Thunder interval max (s)")] public float ThunderMax = 14f;
@@ -319,6 +324,9 @@ namespace Oxide.Plugins
             [JsonProperty("Purple smoke prefab")] public string SmokePrefab = "assets/bundled/prefabs/fx/smoke_signal_full.prefab";
             [JsonProperty("Purple light count")] public int LightCount = 12;
             [JsonProperty("Atmosphere ring radius")] public float RingRadius = 40f;
+            [JsonProperty("Server-wide purple screen filter")] public bool ScreenFilter = true;
+            [JsonProperty("Screen filter color (hex)")] public string FilterColor = "#8A2BE2";
+            [JsonProperty("Screen filter strength (0-1)")] public float FilterStrength = 0.3f;
         }
 
         public class ZoneConfig
@@ -1103,11 +1111,15 @@ namespace Oxide.Plugins
 
         public class WeatherController
         {
+            public const string FilterName = "riftstorm.purplefilter";
+
             private readonly RiftContext ctx;
             private bool active;
             private Vector3 center;
 
             public WeatherController(RiftContext ctx) { this.ctx = ctx; }
+
+            public bool IsActive => active;
 
             public void RampUp(RiftEvent ev)
             {
@@ -1121,10 +1133,55 @@ namespace Oxide.Plugins
                 ctx.Logger.Info("Weather override applied (storm).");
                 if (w.Thunder) StartThunder();
                 SpawnAtmosphere(ev.Center);
+                ShowFilterAll();
+            }
+
+            // Server-wide purple screen tint — a full-screen translucent overlay on
+            // every player's HUD so the whole world reads as purple during the storm.
+            public void ShowFilterAll()
+            {
+                if (!ctx.Config.Weather.ScreenFilter) return;
+                foreach (var pl in BasePlayer.activePlayerList) ShowFilter(pl);
+            }
+
+            public void ShowFilter(BasePlayer pl)
+            {
+                if (pl == null || !ctx.Config.Weather.ScreenFilter) return;
+                var w = ctx.Config.Weather;
+                var rgb = HexToColor(w.FilterColor);
+                float a = Mathf.Clamp01(w.FilterStrength);
+                var ic = CultureInfo.InvariantCulture;
+                string F(float v) => v.ToString("0.###", ic);
+                string baseCol = $"{F(rgb.r)} {F(rgb.g)} {F(rgb.b)} {F(a)}";
+                string glowCol = $"0.69 0.15 1.0 {F(a * 0.6f)}";
+
+                var c = new CuiElementContainer();
+                // full-screen base tint
+                c.Add(new CuiPanel
+                {
+                    Image = { Color = baseCol },
+                    RectTransform = { AnchorMin = "0 0", AnchorMax = "1 1" },
+                    CursorEnabled = false
+                }, "Overlay", FilterName);
+                // stronger glow band across the top for a stormy mood
+                c.Add(new CuiPanel
+                {
+                    Image = { Color = glowCol },
+                    RectTransform = { AnchorMin = "0 0.55", AnchorMax = "1 1" },
+                    CursorEnabled = false
+                }, FilterName);
+
+                CuiHelper.DestroyUi(pl, FilterName);
+                CuiHelper.AddUi(pl, c);
+            }
+
+            public void HideFilterAll()
+            {
+                foreach (var pl in BasePlayer.activePlayerList) CuiHelper.DestroyUi(pl, FilterName);
             }
 
             private void Set(string convar, float value) =>
-                ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet, convar, value);
+                ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet(), convar, value);
 
             private void StartThunder()
             {
@@ -1176,6 +1233,7 @@ namespace Oxide.Plugins
                 Set("weather.fog", -1);
                 Set("weather.clouds", -1);
                 Set("weather.wind", -1);
+                HideFilterAll();
                 ctx.Logger.Info("Weather restored.");
             }
 
@@ -1641,7 +1699,7 @@ namespace Oxide.Plugins
                     .Replace("{steamid}", pl.UserIDString)
                     .Replace("{amount}", amt.ToString());
                 if (!string.IsNullOrWhiteSpace(cmd))
-                    ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet, cmd);
+                    ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet(), cmd, new object[0]);
                 pl.ChatMessage($"<color=#B026FF>+{amt} Project Rift Tokens</color>");
             }
         }
@@ -1665,7 +1723,9 @@ namespace Oxide.Plugins
             {
                 var grp = ctx.Config.Rewards.TitleGroup;
                 if (string.IsNullOrEmpty(grp)) return;
-                ConsoleSystem.Run(ConsoleSystem.Option.Server.Quiet, $"oxide.usergroup add {pl.UserIDString} {grp}");
+                string cmd = "oxide.usergroup add " + pl.UserIDString + " " + grp;
+                ConsoleSystem.Option opt = ConsoleSystem.Option.Server.Quiet();
+                ConsoleSystem.Run(opt, cmd, new object[0]);
             }
         }
 

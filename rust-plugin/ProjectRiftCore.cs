@@ -96,7 +96,7 @@ namespace Oxide.Plugins
             public string RadiationEnterPrefab = "assets/prefabs/locks/keypad/effects/lock.code.denied.prefab";
 
             [JsonProperty("Custom vitals bars (HP/water/food) over the default bars")]
-            public bool VitalsEnabled = true;
+            public bool VitalsEnabled = false;
 
             // Anchored to the BOTTOM-RIGHT corner with pixel offsets so it lines
             // up on every resolution/aspect ratio (same as Rust's native bars).
