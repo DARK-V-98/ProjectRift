@@ -20,9 +20,11 @@ fi
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
 # 1) Website dependencies (registry.npmjs.org is reachable through the proxy).
+#    --no-package-lock so a session never rewrites package-lock.json (npm would
+#    otherwise churn optional/peer metadata and leave the working tree dirty).
 if [ -f package.json ]; then
   echo "[session-start] installing npm dependencies..."
-  npm install --no-audit --no-fund || echo "[session-start] WARN: npm install failed (continuing)."
+  npm install --no-audit --no-fund --no-package-lock || echo "[session-start] WARN: npm install failed (continuing)."
 fi
 
 # 2) RiftStorm plugin compile gate (best-effort; never blocks startup).
