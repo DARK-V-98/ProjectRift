@@ -8,6 +8,7 @@ import { auth } from "@/lib/firebase";
 import { useAuth } from "@/lib/useAuth";
 import { SITE } from "@/lib/site";
 import { statusMeta } from "@/lib/whitelistStatus";
+import { Icon } from "@/components/Icons";
 
 export default function Dashboard() {
   const router = useRouter();
