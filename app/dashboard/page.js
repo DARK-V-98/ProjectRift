@@ -102,25 +102,25 @@ export default function Dashboard() {
         {/* menu */}
         <div className="dash-grid">
           <Link href="/dashboard/whitelist" className="dash-card glass">
-            <span className="dash-card-ic">🛡️</span>
+            <span className="dash-card-ic"><Icon.shield style={{ width: 26, height: 26 }} /></span>
             <h3>Rust Server Whitelist</h3>
             <p>Apply as a Player or Streamer to get whitelisted on the server.</p>
           </Link>
 
           <a href={SITE.connectUrl} className="dash-card glass">
-            <span className="dash-card-ic">🎮</span>
+            <span className="dash-card-ic"><Icon.gamepad style={{ width: 26, height: 26 }} /></span>
             <h3>Connect to Server</h3>
             <p>{SITE.serverIp}</p>
           </a>
 
           <a href={SITE.discordUrl} target="_blank" rel="noreferrer" className="dash-card glass">
-            <span className="dash-card-ic">💬</span>
+            <span className="dash-card-ic"><Icon.discord style={{ width: 24, height: 24 }} /></span>
             <h3>Discord Community</h3>
             <p>Join announcements, events and support.</p>
           </a>
 
           <Link href="/#servers" className="dash-card glass">
-            <span className="dash-card-ic">📊</span>
+            <span className="dash-card-ic"><Icon.pulse style={{ width: 26, height: 26 }} /></span>
             <h3>Server Status</h3>
             <p>Live players, wipe schedule and Rift Storm events.</p>
           </Link>

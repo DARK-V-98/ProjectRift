@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
+import { Icon } from "@/components/Icons";
 
 // ---- form field definitions (mirror the official applications) -------------
 const PLAYER_FIELDS = [
@@ -134,14 +135,14 @@ export default function WhitelistPage() {
             className={type === "player" ? "active" : ""}
             onClick={() => { setType("player"); setResult(null); }}
           >
-            👤 Player
+            <Icon.user style={{ width: 18, height: 18 }} /> Player
           </button>
           <button
             type="button"
             className={type === "streamer" ? "active" : ""}
             onClick={() => { setType("streamer"); setResult(null); }}
           >
-            🎥 Streamer
+            <Icon.video style={{ width: 18, height: 18 }} /> Streamer
           </button>
         </div>
 

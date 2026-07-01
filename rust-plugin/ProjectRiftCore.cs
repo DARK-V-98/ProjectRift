@@ -162,6 +162,7 @@ namespace Oxide.Plugins
 
         #region UI palette / names
         private const string HudName = "ProjectRift.HUD";
+        private const string HudOnlineName = "ProjectRift.HUD.on";
         private const string WelcomeName = "ProjectRift.Welcome";
         private const string InfoName = "ProjectRift.Info";
         private const string DeathName = "ProjectRift.Death";
@@ -237,15 +238,10 @@ namespace Oxide.Plugins
             // Refresh the HUD (name + playtime) every minute.
             timer.Every(60f, RefreshHudAll);
 
-            // Refresh ONLY the vitals bar fills every second (the opaque cover
-            // persists, so the default bars never flash through).
-            timer.Every(1f, () =>
-            {
-                if (!config.VitalsEnabled) return;
-                foreach (var p in BasePlayer.activePlayerList)
-                    if (p != null && p.IsConnected && !p.IsDead() && !p.IsSleeping())
-                        RefreshStatsBars(p);
-            });
+            // Subtle breathing pulse on the live "online" dot.
+            timer.Every(1.4f, PulseHudAll);
+
+            // Custom vitals bars removed — we use Rust's default HP/water/food bars.
             // (re)draw HUD + start session timers for everyone already online.
             foreach (var p in BasePlayer.activePlayerList)
             {
@@ -368,27 +364,41 @@ namespace Oxide.Plugins
             if (!config.HudEnabled || player == null || !player.IsConnected) return;
             CuiHelper.DestroyUi(player, HudName);
 
-            int players = BasePlayer.activePlayerList.Count;
-            int max = ConVar.Server.maxplayers;
             var c = new CuiElementContainer();
+            string urlBase = (config.WebsiteUrl ?? "").TrimEnd('/');
 
-            // frosted-glass card, top-right
-            string card = c.Add(new CuiPanel
+            // ---- rounded card background (uses the rounded panel.png) ----
+            string cardPng = ImageLibrary?.Call("GetImage", "rift_panel", 0UL) as string;
+            var cardBg = new CuiRawImageComponent { Color = "0.04 0.05 0.10 0.96", FadeIn = 0.45f };
+            if (!string.IsNullOrEmpty(cardPng)) cardBg.Png = cardPng;
+            else cardBg.Url = urlBase + "/ui/panel.png";
+            c.Add(new CuiElement
             {
-                Image = { Color = Glass, Material = Blur },
-                RectTransform = { AnchorMin = "0.84 0.878", AnchorMax = "0.998 0.988" }
-            }, "Hud", HudName);
+                Parent = "Hud",
+                Name = HudName,
+                Components = { cardBg, new CuiRectTransformComponent { AnchorMin = "0.84 0.878", AnchorMax = "0.998 0.988" } }
+            });
+            string card = HudName;
 
-            // left accent bar
+            // soft inner glow tint (purple), rounded via same sprite, faint
+            var glow = new CuiRawImageComponent { Color = "0.69 0.15 1 0.07", FadeIn = 0.6f };
+            if (!string.IsNullOrEmpty(cardPng)) glow.Png = cardPng; else glow.Url = urlBase + "/ui/panel.png";
+            c.Add(new CuiElement
+            {
+                Parent = card,
+                Components = { glow, new CuiRectTransformComponent { AnchorMin = "0 0", AnchorMax = "1 1" } }
+            });
+
+            // inset left accent bar (kept off the rounded corners)
             c.Add(new CuiPanel
             {
-                Image = { Color = Purple },
-                RectTransform = { AnchorMin = "0 0", AnchorMax = "0.014 1" }
+                Image = { Color = Purple, FadeIn = 0.5f },
+                RectTransform = { AnchorMin = "0.022 0.16", AnchorMax = "0.04 0.84" }
             }, card);
 
-            // ---- server logo (no player avatar) ----
+            // ---- server logo ----
             string logoPng = ImageLibrary?.Call("GetImage", "rift_logo", 0UL) as string;
-            var logoImg = new CuiRawImageComponent();
+            var logoImg = new CuiRawImageComponent { FadeIn = 0.5f };
             if (!string.IsNullOrEmpty(logoPng)) logoImg.Png = logoPng;
             else logoImg.Url = config.LogoUrl;
             c.Add(new CuiElement
@@ -397,7 +407,7 @@ namespace Oxide.Plugins
                 Components =
                 {
                     logoImg,
-                    new CuiRectTransformComponent { AnchorMin = "0.06 0.5", AnchorMax = "0.06 0.5", OffsetMin = "2 -22", OffsetMax = "44 22" }
+                    new CuiRectTransformComponent { AnchorMin = "0.06 0.5", AnchorMax = "0.06 0.5", OffsetMin = "6 -22", OffsetMax = "48 22" }
                 }
             });
 
@@ -406,26 +416,63 @@ namespace Oxide.Plugins
             if (name.Length > 15) name = name.Substring(0, 15) + "…";
             c.Add(new CuiLabel
             {
-                Text = { Text = name, FontSize = 14, Font = FontBold, Align = TextAnchor.LowerLeft, Color = White },
+                Text = { Text = name, FontSize = 14, Font = FontBold, Align = TextAnchor.LowerLeft, Color = White, FadeIn = 0.5f },
                 RectTransform = { AnchorMin = "0.3 0.64", AnchorMax = "0.97 0.93" }
             }, card);
 
             // playtime
             c.Add(new CuiLabel
             {
-                Text = { Text = $"<color=#9aa3c4>PLAYTIME</color>  <color=#00e5ff>{PlaytimeText(player)}</color>", FontSize = 11, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = Muted },
+                Text = { Text = $"<color=#9aa3c4>PLAYTIME</color>  <color=#00e5ff>{PlaytimeText(player)}</color>", FontSize = 11, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = Muted, FadeIn = 0.5f },
                 RectTransform = { AnchorMin = "0.3 0.38", AnchorMax = "0.97 0.62" }
             }, card);
 
-            // online count
-            c.Add(new CuiLabel
-            {
-                Text = { Text = $"<color=#2bff88>●</color>  {players}<color=#9aa3c4>/{max}</color>  ONLINE", FontSize = 12, Font = FontReg, Align = TextAnchor.MiddleLeft, Color = "0.82 0.85 0.94 1" },
-                RectTransform = { AnchorMin = "0.3 0.08", AnchorMax = "0.97 0.36" }
-            }, card);
-
             CuiHelper.AddUi(player, c);
-            BuildStats(player);
+
+            // animated online line (separate so it can pulse cheaply)
+            DrawOnlineLine(player, true);
+            // Custom vitals bars removed — destroy any leftover panel from older builds.
+            CuiHelper.DestroyUi(player, StatsName);
+        }
+
+        private bool hudPulseBright;
+
+        // Pulses the live "online" dot for a subtle breathing glow. Cheap: only
+        // the small online line is re-sent, not the whole card.
+        private void PulseHudAll()
+        {
+            if (!config.HudEnabled) return;
+            hudPulseBright = !hudPulseBright;
+            foreach (var p in BasePlayer.activePlayerList)
+                if (p != null && p.IsConnected && !p.IsSleeping())
+                    DrawOnlineLine(p, hudPulseBright);
+        }
+
+        private void DrawOnlineLine(BasePlayer player, bool bright)
+        {
+            if (player == null || !player.IsConnected) return;
+            int players = BasePlayer.activePlayerList.Count;
+            int max = ConVar.Server.maxplayers;
+            string dot = bright ? "#41ffa6" : "#1f7a4d";
+
+            CuiHelper.DestroyUi(player, HudOnlineName);
+            var c = new CuiElementContainer();
+            c.Add(new CuiElement
+            {
+                Parent = HudName,
+                Name = HudOnlineName,
+                Components =
+                {
+                    new CuiTextComponent
+                    {
+                        Text = $"<color={dot}>●</color>  {players}<color=#9aa3c4>/{max}</color>  ONLINE",
+                        FontSize = 12, Font = FontReg, Align = TextAnchor.MiddleLeft,
+                        Color = "0.82 0.85 0.94 1", FadeIn = 0.6f
+                    },
+                    new CuiRectTransformComponent { AnchorMin = "0.3 0.08", AnchorMax = "0.97 0.36" }
+                }
+            });
+            CuiHelper.AddUi(player, c);
         }
         #endregion
 
@@ -940,6 +987,11 @@ namespace Oxide.Plugins
             // cache the round logo for the HUD (avoids per-rebuild flicker)
             if (!string.IsNullOrEmpty(config.LogoUrl))
                 ImageLibrary.Call("AddImage", config.LogoUrl, "rift_logo", 0UL);
+
+            // cache the rounded panel image so the HUD card has rounded corners
+            var baseUrl = (config.WebsiteUrl ?? "").TrimEnd('/');
+            if (!string.IsNullOrEmpty(baseUrl))
+                ImageLibrary.Call("AddImage", baseUrl + "/ui/panel.png", "rift_panel", 0UL);
 
             if (config.SpinFrameCount <= 0 || string.IsNullOrEmpty(config.SpinFrameBaseUrl)) return;
             for (int i = 0; i < config.SpinFrameCount; i++)

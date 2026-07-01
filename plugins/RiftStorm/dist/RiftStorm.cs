@@ -314,9 +314,11 @@ namespace Oxide.Plugins
         {
             [JsonProperty("Override weather")] public bool Enabled = true;
             [JsonProperty("Rain (0-1)")] public float Rain = 1f;
-            [JsonProperty("Fog (0-1)")] public float Fog = 1f;
+            [JsonProperty("Fog (0-1)")] public float Fog = 0.5f;
             [JsonProperty("Clouds (0-1)")] public float Clouds = 1f;
-            [JsonProperty("Wind (0-1)")] public float Wind = 0.9f;
+            [JsonProperty("Wind (0-1)")] public float Wind = 1f;
+            [JsonProperty("Ocean rise / tide (m, 0 = off)")] public float OceanRise = 4f;
+            [JsonProperty("Ramp-up time to full storm (s)")] public float RampSeconds = 30f;
             [JsonProperty("Thunder enabled")] public bool Thunder = true;
             [JsonProperty("Thunder interval min (s)")] public float ThunderMin = 6f;
             [JsonProperty("Thunder interval max (s)")] public float ThunderMax = 14f;
@@ -324,7 +326,7 @@ namespace Oxide.Plugins
             [JsonProperty("Purple smoke prefab")] public string SmokePrefab = "assets/bundled/prefabs/fx/smoke_signal_full.prefab";
             [JsonProperty("Purple light count")] public int LightCount = 12;
             [JsonProperty("Atmosphere ring radius")] public float RingRadius = 40f;
-            [JsonProperty("Server-wide purple screen filter")] public bool ScreenFilter = true;
+            [JsonProperty("Server-wide purple screen filter")] public bool ScreenFilter = false;
             [JsonProperty("Screen filter color (hex)")] public string FilterColor = "#8A2BE2";
             [JsonProperty("Screen filter strength (0-1)")] public float FilterStrength = 0.3f;
         }
@@ -1115,6 +1117,7 @@ namespace Oxide.Plugins
 
             private readonly RiftContext ctx;
             private bool active;
+            private int rampGen;          // cancels an in-progress ramp on stop
             private Vector3 center;
 
             public WeatherController(RiftContext ctx) { this.ctx = ctx; }
@@ -1126,14 +1129,38 @@ namespace Oxide.Plugins
                 if (!ctx.Config.Weather.Enabled) return;
                 active = true; center = ev.Center;
                 var w = ctx.Config.Weather;
-                Set("weather.rain", w.Rain);
-                Set("weather.fog", w.Fog);
-                Set("weather.clouds", w.Clouds);
-                Set("weather.wind", w.Wind);
-                ctx.Logger.Info("Weather override applied (storm).");
+                StartRamp(w);                 // gradually build rain / wind / tide to full
+                ctx.Logger.Info($"Weather ramping up over {w.RampSeconds:0}s (storm).");
                 if (w.Thunder) StartThunder();
                 SpawnAtmosphere(ev.Center);
-                ShowFilterAll();
+                // purple screen overlay intentionally NOT shown — replaced by real weather
+            }
+
+            // Steps the storm from calm (0%) to full (100%) over RampSeconds.
+            private void StartRamp(WeatherConfig w)
+            {
+                int gen = ++rampGen;
+                const float step = 1.5f;      // update every 1.5s
+                float dur = Mathf.Max(0f, w.RampSeconds);
+                if (dur <= 0.01f) { ApplyWeather(w, 1f); return; }
+                int steps = Mathf.Max(1, Mathf.CeilToInt(dur / step));
+
+                void Tick(int i)
+                {
+                    if (!active || gen != rampGen) return;     // storm ended / new ramp
+                    ApplyWeather(w, Mathf.Clamp01((float)i / steps));
+                    if (i < steps) ctx.After(step, () => Tick(i + 1));
+                }
+                Tick(0);
+            }
+
+            private void ApplyWeather(WeatherConfig w, float t)
+            {
+                Set("weather.rain", w.Rain * t);
+                Set("weather.fog", w.Fog * t);
+                Set("weather.clouds", w.Clouds * t);
+                Set("weather.wind", w.Wind * t);
+                if (w.OceanRise != 0f) Set("oceanlevel", w.OceanRise * t);
             }
 
             // Server-wide purple screen tint — a full-screen translucent overlay on
@@ -1229,11 +1256,13 @@ namespace Oxide.Plugins
             {
                 if (!active) return;
                 active = false;
+                rampGen++;              // cancel any in-progress ramp
                 Set("weather.rain", -1);
                 Set("weather.fog", -1);
                 Set("weather.clouds", -1);
                 Set("weather.wind", -1);
-                HideFilterAll();
+                Set("oceanlevel", 0);   // drop the tide back to normal
+                HideFilterAll();        // clear any leftover overlay from older builds
                 ctx.Logger.Info("Weather restored.");
             }
 

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/useAuth";
 import { WL_STATUS, ADMIN_STATUSES, statusMeta } from "@/lib/whitelistStatus";
+import { Icon } from "@/components/Icons";
 
 const ACTIONS = [
   { status: "approved", label: "Confirm" },
@@ -143,7 +144,11 @@ export default function AdminWhitelist() {
             return (
               <div key={a.id} className="wl-row glass">
                 <button className="wl-row-head" onClick={() => setOpenId(open ? null : a.id)}>
-                  <span className="wl-row-type">{a.type === "streamer" ? "🎥 Streamer" : "👤 Player"}</span>
+                  <span className="wl-row-type">
+                    {a.type === "streamer"
+                      ? <><Icon.video style={{ width: 16, height: 16 }} /> Streamer</>
+                      : <><Icon.user style={{ width: 16, height: 16 }} /> Player</>}
+                  </span>
                   <span className="wl-row-name">{d.fullName || a.email || a.uid}</span>
                   <span className="wl-row-date">{a.createdAt ? new Date(a.createdAt).toLocaleDateString() : ""}</span>
                   <span className="wl-row-status" style={{ color: meta.color, borderColor: meta.color }}>{meta.short}</span>

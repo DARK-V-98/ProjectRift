@@ -2236,6 +2236,10 @@ a {
 .auth-tabs button,
 .wl-tabs button {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 10px 12px;
   font-family: var(--font-ui);
   text-transform: uppercase;
@@ -2315,7 +2319,17 @@ a {
   transition: transform 0.2s, border-color 0.2s;
 }
 .dash-card:hover { transform: translateY(-4px); border-color: var(--glass-border-hover); }
-.dash-card-ic { font-size: 1.6rem; }
+.dash-card-ic {
+  display: inline-flex;
+  width: 46px;
+  height: 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid var(--glass-border);
+}
 .dash-card h3 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -2415,7 +2429,7 @@ a {
   text-align: left;
   color: var(--white);
 }
-.wl-row-type { font-size: 0.86rem; color: var(--muted); }
+.wl-row-type { display: inline-flex; align-items: center; gap: 7px; font-size: 0.86rem; color: var(--muted); }
 .wl-row-name { font-weight: 600; font-size: 0.98rem; }
 .wl-row-date { color: var(--muted-dim); font-size: 0.82rem; }
 .wl-row-status {
